@@ -1,0 +1,11 @@
+package carina_plugin.msgs;
+
+message Steering
+{
+    required float    steering_angle      = 1 [default = 0];
+}
+
+message Throttle
+{
+    required float    throttle_percentage = 1 [default = 0];
+}
