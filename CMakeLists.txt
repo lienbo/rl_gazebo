@@ -9,7 +9,7 @@ if (NOT PROTOBUF_FOUND)
 endif()
 include_directories( ${PROTOBUF_INCLUDE_DIRS} )
 include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
-PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS carina_plugin.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS src/carina_plugin.proto)
 
 
 ### Compile the Gazebo plugin
@@ -20,7 +20,7 @@ link_directories( ${GAZEBO_LIBRARY_DIRS} )
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 add_library(CarinaPlugin SHARED
-    CarinaPlugin.cpp
+    src/CarinaPlugin.cpp
     ${PROTO_SRCS}
     ${PROTO_HDRS})
 
