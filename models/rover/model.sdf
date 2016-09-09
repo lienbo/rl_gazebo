@@ -156,7 +156,7 @@
             </axis>
         </joint>
 
-<!--        <plugin name="CarinaPlugin" filename="libCarinaPlugin.so"/>-->
+        <plugin name="CarinaPlugin" filename="libCarinaPlugin.so"/>
 
     </model>
 </sdf>

@@ -28,3 +28,14 @@ target_link_libraries(CarinaPlugin
     ${GAZEBO_LIBRARIES}
     ${Boost_LIBRARIES}
     ${PROTOBUF_LIBRARIES})
+
+
+### Install pluing msg files and models
+install(TARGETS CarinaPlugin LIBRARY
+    DESTINATION ${GAZEBO_PLUGIN_PATH})
+
+install(FILES ${CMAKE_BINARY_DIR}/carina_plugin.pb.h
+    DESTINATION ${GAZEBO_PROTO_INCLUDE_DIRS})
+
+install(DIRECTORY models/
+    DESTINATION ${GAZEBO_MODEL_PATH})
