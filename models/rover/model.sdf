@@ -2,6 +2,7 @@
 <sdf version='1.4'>
     <model name="rover">
         <static>false</static>
+        <pose>0 0 .15 0 0 0</pose>
         
         <link name='chassis'>
             <pose>-0.02 0 0.15 0 0 0</pose>
@@ -49,7 +50,6 @@
         </link>
 
         <joint type="revolute" name="rear_left_joint">
-            <pose>-0.3 0.2 0.1 0 0 0</pose>
             <child>rear_left_wheel</child>
             <parent>chassis</parent>
             <axis>
@@ -82,7 +82,6 @@
         </link>
 
         <joint type="revolute" name="rear_right_joint">
-            <pose>-0.3 -0.2 0.1 0 0 0</pose>
             <child>rear_right_wheel</child>
             <parent>chassis</parent>
             <axis>
@@ -115,7 +114,6 @@
         </link>
 
         <joint type="revolute" name="front_left_joint">
-            <pose>0.3 0.2 0.1 0 0 0</pose>
             <child>front_left_wheel</child>
             <parent>chassis</parent>
             <axis>
@@ -148,7 +146,6 @@
         </link>
 
         <joint type="revolute" name="front_right_joint">
-            <pose>0.3 -0.2 0.1 0 0 0</pose>
             <child>front_right_wheel</child>
             <parent>chassis</parent>
             <axis>

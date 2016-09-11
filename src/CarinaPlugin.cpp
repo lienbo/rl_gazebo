@@ -33,7 +33,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-    steeringWheelController();
+//    steeringWheelController();
 }
 
 
@@ -101,7 +101,7 @@ void CarinaPlugin::steeringWheelController()
 {
     // Steering wheel proportional controller.
     // steeringAngle is the setpoint
-    const unsigned int rotationAxis = 3;
+    const unsigned int rotationAxis = 0;
     const math::Angle currentAngle = frontLeftJoint->GetAngle( rotationAxis );
     double torque;
 
