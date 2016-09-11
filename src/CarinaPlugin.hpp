@@ -14,11 +14,15 @@ namespace gazebo{
     class CarinaPlugin : public ModelPlugin{
         public:
         void Load(physics::ModelPtr model, sdf::ElementPtr sdfFile);
-        void OnUpdate(const common::UpdateInfo & info);
-        void ThrottleCallback(ThrottlePtr &throttleMsg);
+        void onUpdate(const common::UpdateInfo & info);
+        void throttleCallback(ThrottlePtr &throttleMsg);
     
         private:
+        void loadParameters();
+
+        sdf::ElementPtr sdfFile;
         physics::ModelPtr carinaModel;
+        physics::LinkPtr chassisLink;
         event::ConnectionPtr updateConnection;
         transport::NodePtr node;
         transport::SubscriberPtr throttleSubscriber;
