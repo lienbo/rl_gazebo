@@ -12,6 +12,8 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
     loadParameters();
 
+    steeringAngle = 0;
+
     // onUpdate is called each simulation step.
     // It will be used to publish simulation data (sensors, pose, etc).
     updateConnection = event::Events::ConnectWorldUpdateBegin(
@@ -23,6 +25,9 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     // Listen to Gazebo world_stats topic
     throttleSubscriber = node->Subscribe("~/" + carinaModel->GetName() +
         "/acceleration_force", &CarinaPlugin::throttleCallback, this);
+
+    steeringSubscriber = node->Subscribe("~/" + carinaModel->GetName() +
+        "/steering_angle", &CarinaPlugin::steeringCallback, this);
 }
 
 
@@ -43,6 +48,14 @@ void CarinaPlugin::throttleCallback( ThrottlePtr &throttleMsg )
     // inpulseForce push the vehicle forward.
     // The direction is controlled by the steering wheel.
     chassisLink->AddLinkForce( math::Vector3(impulseForce, 0, 0) );
+}
+
+
+void CarinaPlugin::steeringCallback( SteeringPtr &steeringMsg )
+{
+    // The steering angle goes from -x to +x where x is the max angle
+    // between the wheel and the car x axis (front of the car)
+    steeringAngle = steeringMsg->steering_angle();
 }
 
 
@@ -74,7 +87,7 @@ void CarinaPlugin::loadParameters()
 }
 
 
-void CarinaPlugin::checkParameterName( string parameterName )
+void CarinaPlugin::checkParameterName( const string &parameterName )
 {
     // Quit application if parameterName is not defined in sdf file
     if( !sdfFile->HasElement( parameterName.c_str() ) ){
