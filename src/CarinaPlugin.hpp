@@ -13,16 +13,20 @@ namespace gazebo{
 
     class CarinaPlugin : public ModelPlugin{
         public:
-        void Load(physics::ModelPtr model, sdf::ElementPtr sdfFile);
-        void onUpdate(const common::UpdateInfo & info);
-        void throttleCallback(ThrottlePtr &throttleMsg);
+        void Load( physics::ModelPtr model, sdf::ElementPtr sdfFile );
+        void onUpdate( const common::UpdateInfo & info );
+        void throttleCallback( ThrottlePtr &throttleMsg );
     
         private:
         void loadParameters();
+        void checkParameterName( std::string );
 
         sdf::ElementPtr sdfFile;
+
         physics::ModelPtr carinaModel;
         physics::LinkPtr chassisLink;
+        physics::JointPtr frontLeftJoint, frontRightJoint;
+
         event::ConnectionPtr updateConnection;
         transport::NodePtr node;
         transport::SubscriberPtr throttleSubscriber;
