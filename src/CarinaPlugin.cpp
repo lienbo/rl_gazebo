@@ -33,7 +33,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-    // Do nothing
+    steeringWheelController();
 }
 
 
@@ -94,4 +94,19 @@ void CarinaPlugin::checkParameterName( const string &parameterName )
         string msg = "CarinaPlugin: " + parameterName + " parameter not defined in model sdf file.";
         gzthrow( msg );
     }
+}
+
+
+void CarinaPlugin::steeringWheelController()
+{
+    // Steering wheel proportional controller.
+    // steeringAngle is the setpoint
+    const unsigned int rotationAxis = 3;
+    const math::Angle currentAngle = frontLeftJoint->GetAngle( rotationAxis );
+    double torque;
+
+    // Apply a torque to Z axis (3) untill the wheel reaches steeringAngle
+    ( currentAngle >= steeringAngle ) ? torque = 50.0 : torque = 0.0;
+    frontLeftJoint->SetForce( rotationAxis, torque );
+    frontRightJoint->SetForce( rotationAxis, torque );
 }

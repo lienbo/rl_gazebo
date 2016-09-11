@@ -22,6 +22,7 @@ namespace gazebo{
         private:
         void loadParameters();
         void checkParameterName( const std::string &parameterName );
+        void steeringWheelController();
 
         sdf::ElementPtr sdfFile;
 
