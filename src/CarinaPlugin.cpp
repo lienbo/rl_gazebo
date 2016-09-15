@@ -12,6 +12,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
     loadParameters();
 
+    // Angles are in radians. Positive is counterclockwise
     steeringAngle = 0;
 
     // onUpdate is called each simulation step.
@@ -24,7 +25,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     node->Init();
     // Listen to Gazebo world_stats topic
     throttleSubscriber = node->Subscribe("~/" + carinaModel->GetName() +
-        "/acceleration_force", &CarinaPlugin::throttleCallback, this);
+        "/trottle_percentage", &CarinaPlugin::throttleCallback, this);
 
     steeringSubscriber = node->Subscribe("~/" + carinaModel->GetName() +
         "/steering_angle", &CarinaPlugin::steeringCallback, this);
@@ -33,7 +34,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-//    steeringWheelController();
+    steeringWheelController();
 }
 
 
@@ -103,10 +104,11 @@ void CarinaPlugin::steeringWheelController()
     // steeringAngle is the setpoint
     const unsigned int rotationAxis = 0;
     const math::Angle currentAngle = frontLeftJoint->GetAngle( rotationAxis );
-    double torque;
+    double velocity;
 
-    // Apply a torque to Z axis (3) untill the wheel reaches steeringAngle
-    ( currentAngle >= steeringAngle ) ? torque = 50.0 : torque = 0.0;
-    frontLeftJoint->SetForce( rotationAxis, torque );
-    frontRightJoint->SetForce( rotationAxis, torque );
+    // Apply a velocity to Z axis until the wheel reaches steeringAngle
+    ( currentAngle >= 0.01 + steeringAngle ) ? velocity = -5.0 : velocity = 0.0;
+    ( currentAngle <= steeringAngle - 0.01 ) ? velocity = 5.0 : velocity = 0.0;
+    frontLeftJoint->SetVelocity( rotationAxis, velocity );
+    frontRightJoint->SetVelocity( rotationAxis, velocity );
 }
