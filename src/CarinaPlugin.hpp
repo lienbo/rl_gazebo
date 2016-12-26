@@ -10,18 +10,32 @@
 
 namespace gazebo{
     typedef const boost::shared_ptr<const carina_plugin::msgs::Throttle> ThrottlePtr;
+    typedef const boost::shared_ptr<const carina_plugin::msgs::Steering> SteeringPtr;
 
     class CarinaPlugin : public ModelPlugin{
         public:
-        void Load(physics::ModelPtr model, sdf::ElementPtr sdfFile);
-        void OnUpdate(const common::UpdateInfo & info);
-        void ThrottleCallback(ThrottlePtr &throttleMsg);
+        void Load( physics::ModelPtr model, sdf::ElementPtr sdfFile );
+        void onUpdate( const common::UpdateInfo & info );
+        void throttleCallback( ThrottlePtr &throttleMsg );
+        void steeringCallback( SteeringPtr &steeringMsg );
     
         private:
+        void loadParameters();
+        void checkParameterName( const std::string &parameterName );
+        void steeringWheelController();
+
+        sdf::ElementPtr sdfFile;
+
         physics::ModelPtr carinaModel;
+        physics::LinkPtr chassisLink;
+        physics::JointPtr frontLeftJoint, frontRightJoint;
+
         event::ConnectionPtr updateConnection;
         transport::NodePtr node;
         transport::SubscriberPtr throttleSubscriber;
+        transport::SubscriberPtr steeringSubscriber;
+
+        double steeringAngle;
     };
     GZ_REGISTER_MODEL_PLUGIN(CarinaPlugin)
 }
