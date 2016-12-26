@@ -5,36 +5,39 @@
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
-#include <gazebo/msgs/msgs.hh>
-#include "carina_plugin.pb.h"
+
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Float32.h>
 
 namespace gazebo{
-    typedef const boost::shared_ptr<const carina_plugin::msgs::Throttle> ThrottlePtr;
-    typedef const boost::shared_ptr<const carina_plugin::msgs::Steering> SteeringPtr;
-
     class CarinaPlugin : public ModelPlugin{
         public:
-        void Load( physics::ModelPtr model, sdf::ElementPtr sdfFile );
-        void onUpdate( const common::UpdateInfo & info );
-        void throttleCallback( ThrottlePtr &throttleMsg );
-        void steeringCallback( SteeringPtr &steeringMsg );
-    
+        CarinaPlugin();
+        ~CarinaPlugin();
+        void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
+        void onUpdate( const common::UpdateInfo &info );
+        void actionCallback(const std_msgs::String::ConstPtr& actionMsg);
+        void applyThrottle(const int& action);
+        void steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg);
+
         private:
         void loadParameters();
         void checkParameterName( const std::string &parameterName );
         void steeringWheelController();
 
-        sdf::ElementPtr sdfFile;
+        event::ConnectionPtr updateConnection;
 
-        physics::ModelPtr carinaModel;
+        sdf::ElementPtr sdfFile;
         physics::LinkPtr chassisLink;
+        physics::ModelPtr carinaModel;
         physics::JointPtr frontLeftJoint, frontRightJoint;
 
-        event::ConnectionPtr updateConnection;
-        transport::NodePtr node;
-        transport::SubscriberPtr throttleSubscriber;
-        transport::SubscriberPtr steeringSubscriber;
+        boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;
+        ros::Subscriber actionSubscriber;
+        ros::Subscriber steeringSubscriber;
 
+        // Angles are in radians. Positive is counterclockwise
         double steeringAngle;
     };
     GZ_REGISTER_MODEL_PLUGIN(CarinaPlugin)
