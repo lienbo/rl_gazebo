@@ -5,7 +5,7 @@ using namespace std;
 using namespace gazebo;
 
 
-CarinaPlugin::CarinaPlugin() : steeringAngle(0) {}
+CarinaPlugin::CarinaPlugin() : steeringAngle(0), vehicleVelocity(0) {}
 
 
 CarinaPlugin::~CarinaPlugin() {}
@@ -16,12 +16,15 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     int argc = 0;
     char** argv = NULL;
     ros::init(argc, argv, "CarinaPlugin");
+    const unsigned bufferSize = 1;
     // Ros topics will be used to exchange data.
     ros::NodeHandle rosNode;
-    actionSubscriber = rosNode.subscribe("/reinforcement_learning/action", 10, &CarinaPlugin::actionCallback, this);
-    steeringSubscriber = rosNode.subscribe("/steering_angle", 10, &CarinaPlugin::steeringCallback, this);
+    actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
+    steeringSubscriber = rosNode.subscribe("/steering_angle", bufferSize, &CarinaPlugin::steeringCallback, this);
+    rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
+    sensationPublisher = rosNode.advertise<std_msgs::Float32>("/rl/sensation", bufferSize);
 
-    async_ros_spin.reset(new ros::AsyncSpinner(1));
+    async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
 
     carinaModel = model;
@@ -36,36 +39,11 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 }
 
 
-void CarinaPlugin::actionCallback(const std_msgs::String::ConstPtr &actionMsg)
-{
-    applyThrottle(1);
-}
-
-
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-    //steeringWheelController();
-}
-
-
-// Throttle is the device that controls the amount of gas that goes to the engine.
-void CarinaPlugin::applyThrottle(const int& action)
-{
-    // Define the relation between throttle and impulse force
-    // This depends on: car horsepower, car weight, fuel type...
-    int simulationFactor = 10;
-    float carPower = 1.0;
-    float impulseForce = carPower * simulationFactor * action;
-    // inpulseForce push the vehicle forward.
-    chassisLink->AddLinkForce( math::Vector3(impulseForce, 0, 0) );
-}
-
-
-void CarinaPlugin::steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg)
-{
-    // The steering angle goes from -x to +x where x is the max angle
-    // between the wheel and the car x axis (front of the car)
-    steeringAngle = steeringMsg->data;
+    carinaModel->SetLinearVel( math::Vector3(vehicleVelocity, 0, 0) );
+    rewardPublisher.publish( getReward() );
+    sensationPublisher.publish( getSensation() );
 }
 
 
@@ -107,6 +85,35 @@ void CarinaPlugin::checkParameterName( const string &parameterName )
 }
 
 
+void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
+{
+    // The vehicle points to the X axis
+    // It can go foward and backward (action can be negative)
+    int action;
+    switch( actionMsg->data ){
+    case(0):
+        action = -1;
+        break;
+    case(1):
+        action = 0;
+        break;
+    case(2):
+        action = 1;
+        break;
+    }
+    float simulationFactor = 0.05;
+    vehicleVelocity = simulationFactor * action;
+}
+
+
+void CarinaPlugin::steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg)
+{
+    // The steering angle goes from -x to +x where x is the max angle
+    // between the wheel and the car x axis (front of the car)
+    steeringAngle = steeringMsg->data;
+}
+
+
 void CarinaPlugin::steeringWheelController()
 {
     // Steering wheel proportional controller.
@@ -120,4 +127,37 @@ void CarinaPlugin::steeringWheelController()
     ( currentAngle <= steeringAngle - 0.01 ) ? velocity = 5.0 : velocity = 0.0;
     frontLeftJoint->SetVelocity( rotationAxis, velocity );
     frontRightJoint->SetVelocity( rotationAxis, velocity );
+}
+
+
+// Throttle is the device that controls the amount of gas that goes to the engine.
+void CarinaPlugin::applyThrottle(const int& action)
+{
+    // Define the relation between throttle and impulse force
+    // This depends on: car horsepower, car weight, fuel type...
+    int simulationFactor = 100;
+    float carPower = 1.0;
+    float impulseForce = carPower * simulationFactor * action;
+    // inpulseForce push the vehicle forward.
+//    chassisLink->AddLinkForce( math::Vector3(impulseForce, 0, 0) );
+}
+
+
+const std_msgs::Float32 CarinaPlugin::getReward() const
+{
+    float setPoint = 1.5; // 1.5m from world frame origin
+    math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
+    std_msgs::Float32 reward;
+    reward.data = - abs(setPoint - absPosition.x);
+
+    return reward;
+}
+
+
+const std_msgs::Float32 CarinaPlugin::getSensation() const
+{
+    math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
+    std_msgs::Float32 sensation;
+    sensation.data = absPosition.x;
+    return sensation;
 }
