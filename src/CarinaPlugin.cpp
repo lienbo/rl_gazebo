@@ -101,7 +101,7 @@ void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
         action = 1;
         break;
     }
-    float simulationFactor = 0.05;
+    float simulationFactor = 0.1;
     vehicleVelocity = simulationFactor * action;
 }
 
@@ -138,17 +138,20 @@ void CarinaPlugin::applyThrottle(const int& action)
     int simulationFactor = 100;
     float carPower = 1.0;
     float impulseForce = carPower * simulationFactor * action;
-    // inpulseForce push the vehicle forward.
+//    inpulseForce push the vehicle forward.
 //    chassisLink->AddLinkForce( math::Vector3(impulseForce, 0, 0) );
 }
 
 
 const std_msgs::Float32 CarinaPlugin::getReward() const
 {
-    float setPoint = 1.5; // 1.5m from world frame origin
+    float setPoint = 3.5; // 1.5m from world frame origin
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     std_msgs::Float32 reward;
-    reward.data = - abs(setPoint - absPosition.x);
+    float distance = abs(setPoint - absPosition.x);
+//    reward.data = abs(setPoint - absPosition.x) > 0.01 ? -1 : 0;
+//    reward.data = - distance / ( distance + 4);
+    reward.data = - distance;
 
     return reward;
 }
@@ -156,8 +159,10 @@ const std_msgs::Float32 CarinaPlugin::getReward() const
 
 const std_msgs::Float32 CarinaPlugin::getSensation() const
 {
+    const float gridSize = 0.125;
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     std_msgs::Float32 sensation;
-    sensation.data = absPosition.x;
+    sensation.data = static_cast<int>(absPosition.x / gridSize);
+
     return sensation;
 }
