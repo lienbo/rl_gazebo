@@ -8,8 +8,9 @@
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
-#include <std_msgs/Float32.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Float32.h>
+#include <geometry_msgs/Point32.h>
 
 namespace gazebo{
     class CarinaPlugin : public ModelPlugin{
@@ -28,7 +29,7 @@ namespace gazebo{
         void steeringWheelController();
         void applyThrottle(const int &action);
         const std_msgs::Float32 getReward() const;
-        const std_msgs::Float32 getState() const;
+        const geometry_msgs::Point32 getState() const;
 
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;

@@ -22,7 +22,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
     steeringSubscriber = rosNode.subscribe("/steering_angle", bufferSize, &CarinaPlugin::steeringCallback, this);
     rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
-    statePublisher = rosNode.advertise<std_msgs::Float32>("/rl/state", bufferSize);
+    statePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state", bufferSize);
 
     async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
@@ -135,7 +135,7 @@ void CarinaPlugin::applyThrottle(const int& action)
 {
     // Define the relation between throttle and impulse force
     // This depends on: car horsepower, car weight, fuel type...
-    int simulationFactor = 100;
+    int simulationFactor = 50;
     float carPower = 1.0;
     float impulseForce = carPower * simulationFactor * action;
 //    inpulseForce push the vehicle forward.
@@ -145,24 +145,26 @@ void CarinaPlugin::applyThrottle(const int& action)
 
 const std_msgs::Float32 CarinaPlugin::getReward() const
 {
-    float setPoint = 1.5; // 1.5m from world frame origin
+    math::Vector3 setPoint(1.5, 0, 0.1); // 1.5m from world frame origin
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
-    std_msgs::Float32 reward;
-    float distance = abs(setPoint - absPosition.x);
+    float distance = absPosition.Distance( setPoint );
 //    reward.data = abs(setPoint - absPosition.x) > 0.01 ? -1 : 0;
 //    reward.data = - distance / ( distance + 4);
+    std_msgs::Float32 reward;
     reward.data = - distance;
 
     return reward;
 }
 
 
-const std_msgs::Float32 CarinaPlugin::getState() const
+const geometry_msgs::Point32 CarinaPlugin::getState() const
 {
-    const float gridSize = 0.125;
+    const float gridSize = 0.1;
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
-    std_msgs::Float32 sensation;
-    sensation.data = static_cast<int>(absPosition.x / gridSize);
+    geometry_msgs::Point32 state;
+    state.x = static_cast<int>(absPosition.x / gridSize);
+    state.y = static_cast<int>(absPosition.y / gridSize);
+    state.z = static_cast<int>(absPosition.z / gridSize);
 
-    return sensation;
+    return state;
 }
