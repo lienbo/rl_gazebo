@@ -28,7 +28,7 @@ namespace gazebo{
         void steeringWheelController();
         void applyThrottle(const int &action);
         const std_msgs::Float32 getReward() const;
-        const std_msgs::Float32 getSensation() const;
+        const std_msgs::Float32 getState() const;
 
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;
@@ -41,7 +41,7 @@ namespace gazebo{
         ros::Subscriber actionSubscriber;
         ros::Subscriber steeringSubscriber;
         ros::Publisher rewardPublisher;
-        ros::Publisher sensationPublisher;
+        ros::Publisher statePublisher;
 
         // Angles are in radians. Positive is counterclockwise
         float steeringAngle;

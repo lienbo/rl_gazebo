@@ -22,7 +22,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
     steeringSubscriber = rosNode.subscribe("/steering_angle", bufferSize, &CarinaPlugin::steeringCallback, this);
     rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
-    sensationPublisher = rosNode.advertise<std_msgs::Float32>("/rl/sensation", bufferSize);
+    statePublisher = rosNode.advertise<std_msgs::Float32>("/rl/state", bufferSize);
 
     async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
@@ -43,7 +43,7 @@ void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
     carinaModel->SetLinearVel( math::Vector3(vehicleVelocity, 0, 0) );
     rewardPublisher.publish( getReward() );
-    sensationPublisher.publish( getSensation() );
+    statePublisher.publish( getState() );
 }
 
 
@@ -145,7 +145,7 @@ void CarinaPlugin::applyThrottle(const int& action)
 
 const std_msgs::Float32 CarinaPlugin::getReward() const
 {
-    float setPoint = 3.5; // 1.5m from world frame origin
+    float setPoint = 1.5; // 1.5m from world frame origin
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     std_msgs::Float32 reward;
     float distance = abs(setPoint - absPosition.x);
@@ -157,7 +157,7 @@ const std_msgs::Float32 CarinaPlugin::getReward() const
 }
 
 
-const std_msgs::Float32 CarinaPlugin::getSensation() const
+const std_msgs::Float32 CarinaPlugin::getState() const
 {
     const float gridSize = 0.125;
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
