@@ -7,7 +7,6 @@
 #include <gazebo/common/common.hh>
 
 #include <ros/ros.h>
-#include <std_msgs/String.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
 #include <geometry_msgs/Point32.h>
@@ -22,7 +21,6 @@ namespace gazebo{
         void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
         void onUpdate( const common::UpdateInfo &info );
         void actionCallback(const std_msgs::Int32::ConstPtr& actionMsg);
-        void steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg);
 
         void loadParameters();
         void checkParameterName( const std::string &parameterName );
@@ -38,6 +36,7 @@ namespace gazebo{
         physics::LinkPtr chassisLink;
         physics::ModelPtr carinaModel;
         physics::JointPtr frontLeftJoint, frontRightJoint;
+        physics::JointPtr rearLeftJoint, rearRightJoint;
 
         ros::Subscriber actionSubscriber;
         ros::Subscriber steeringSubscriber;

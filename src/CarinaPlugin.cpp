@@ -17,10 +17,10 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     char** argv = NULL;
     ros::init(argc, argv, "CarinaPlugin");
     const unsigned bufferSize = 1;
+
     // Ros topics will be used to exchange data.
     ros::NodeHandle rosNode;
     actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
-    steeringSubscriber = rosNode.subscribe("/steering_angle", bufferSize, &CarinaPlugin::steeringCallback, this);
     rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
     statePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state", bufferSize);
 
@@ -41,7 +41,13 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-    carinaModel->SetLinearVel( math::Vector3(vehicleVelocity, 0, 0) );
+    const float simulationFactor = 1;
+    const float velocity = simulationFactor * vehicleVelocity;
+
+    rearRightJoint->SetVelocity( 0, velocity );
+    rearLeftJoint->SetVelocity( 0, velocity );
+
+    steeringWheelController();
     rewardPublisher.publish( getReward() );
     statePublisher.publish( getState() );
 }
@@ -69,6 +75,22 @@ void CarinaPlugin::loadParameters()
     frontRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("front_right_joint") );
     if( !frontRightJoint ){
         string msg = "CarinaPlugin: " + sdfFile->Get<string>("front_right_joint") +
+            " not found in " + carinaModel->GetName() + " model";
+        gzmsg << msg << endl;
+    }
+
+    checkParameterName( "rear_left_joint" );
+    rearLeftJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_left_joint") );
+    if( !rearLeftJoint ){
+        string msg = "CarinaPlugin: " + sdfFile->Get<string>("rear_left_joint") +
+            " not found in " + carinaModel->GetName() + " model";
+        gzmsg << msg << endl;
+    }
+
+    checkParameterName( "rear_right_joint" );
+    rearRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_right_joint") );
+    if( !rearRightJoint ){
+        string msg = "CarinaPlugin: " + sdfFile->Get<string>("rear_right_joint") +
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
@@ -120,11 +142,16 @@ void CarinaPlugin::steeringWheelController()
     // steeringAngle is the setpoint
     const unsigned int rotationAxis = 0;
     const math::Angle currentAngle = frontLeftJoint->GetAngle( rotationAxis );
-    double velocity;
+    float velocity;
 
     // Apply a velocity to Z axis until the wheel reaches steeringAngle
-    ( currentAngle >= 0.01 + steeringAngle ) ? velocity = -5.0 : velocity = 0.0;
-    ( currentAngle <= steeringAngle - 0.01 ) ? velocity = 5.0 : velocity = 0.0;
+    if( currentAngle >= 0.01 + steeringAngle ){
+        velocity = -0.2;
+    } else if ( currentAngle <= steeringAngle - 0.01 ){
+        velocity = 0.2;
+    } else {
+        velocity = 0.0;
+    }
     frontLeftJoint->SetVelocity( rotationAxis, velocity );
     frontRightJoint->SetVelocity( rotationAxis, velocity );
 }
@@ -145,7 +172,7 @@ void CarinaPlugin::applyThrottle(const int& action)
 
 const std_msgs::Float32 CarinaPlugin::getReward() const
 {
-    math::Vector3 setPoint(1.5, 0, 0.1); // 1.5m from world frame origin
+    math::Vector3 setPoint(3.5, 3.5, 0.1); // 1.5m from world frame origin
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     float distance = absPosition.Distance( setPoint );
 //    reward.data = abs(setPoint - absPosition.x) > 0.01 ? -1 : 0;
@@ -159,7 +186,7 @@ const std_msgs::Float32 CarinaPlugin::getReward() const
 
 const geometry_msgs::Point32 CarinaPlugin::getState() const
 {
-    const float gridSize = 0.1;
+    const float gridSize = 0.2;
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     geometry_msgs::Point32 state;
     state.x = static_cast<int>(absPosition.x / gridSize);
