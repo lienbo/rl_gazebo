@@ -111,28 +111,61 @@ void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
 {
     // The vehicle points to the X axis
     // It can go foward and backward (action can be negative)
-    int action;
+    const float speedLimit = 1;
+    const float oneRad = 0.01745;
+    const int angleRate = 2.5;
+    const float angleLimit = 30 * oneRad;
     switch( actionMsg->data ){
     case(0):
-        action = -1;
+        if( vehicleVelocity > - speedLimit )
+            vehicleVelocity += - 1;
+        if( steeringAngle > - angleLimit)
+            steeringAngle += - angleRate * oneRad;
         break;
     case(1):
-        action = 0;
+        if( vehicleVelocity > - speedLimit )
+            vehicleVelocity += - 1;
         break;
     case(2):
-        action = 1;
+        if( vehicleVelocity > - speedLimit )
+            vehicleVelocity += - 1;
+        if( steeringAngle < angleLimit)
+            steeringAngle += + angleRate * oneRad;
+        break;
+
+    case(3):
+        if( steeringAngle > - angleLimit)
+            steeringAngle += - angleRate * oneRad;
+        break;
+    case(4):
+	    // Dont change velocity or steering angle
+        break;
+    case(5):
+        if( steeringAngle < angleLimit)
+            steeringAngle += + angleRate * oneRad;
+        break;
+
+    case(6):
+        if( vehicleVelocity < speedLimit )
+            vehicleVelocity += 1;
+        if( steeringAngle > - angleLimit)
+            steeringAngle += - angleRate * oneRad;
+        break;
+    case(7):
+        if( vehicleVelocity < speedLimit )
+            vehicleVelocity += 1;
+        break;
+    case(8):
+        if( vehicleVelocity < speedLimit )
+            vehicleVelocity += 1;
+        if( steeringAngle < angleLimit)
+            steeringAngle += + angleRate * oneRad;
+        break;
+    case(9):
+        // Emergency brake
+        vehicleVelocity = 0;
         break;
     }
-    float simulationFactor = 0.1;
-    vehicleVelocity = simulationFactor * action;
-}
-
-
-void CarinaPlugin::steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg)
-{
-    // The steering angle goes from -x to +x where x is the max angle
-    // between the wheel and the car x axis (front of the car)
-    steeringAngle = steeringMsg->data;
 }
 
 
