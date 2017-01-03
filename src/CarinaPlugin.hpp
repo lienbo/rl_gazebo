@@ -5,37 +5,48 @@
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
-#include <gazebo/msgs/msgs.hh>
-#include "carina_plugin.pb.h"
+
+#include <ros/ros.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Int32.h>
+#include <std_msgs/Float32.h>
+#include <geometry_msgs/Point32.h>
 
 namespace gazebo{
-    typedef const boost::shared_ptr<const carina_plugin::msgs::Throttle> ThrottlePtr;
-    typedef const boost::shared_ptr<const carina_plugin::msgs::Steering> SteeringPtr;
-
     class CarinaPlugin : public ModelPlugin{
         public:
-        void Load( physics::ModelPtr model, sdf::ElementPtr sdfFile );
-        void onUpdate( const common::UpdateInfo & info );
-        void throttleCallback( ThrottlePtr &throttleMsg );
-        void steeringCallback( SteeringPtr &steeringMsg );
-    
+        CarinaPlugin();
+        ~CarinaPlugin();
+
         private:
+        void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
+        void onUpdate( const common::UpdateInfo &info );
+        void actionCallback(const std_msgs::Int32::ConstPtr& actionMsg);
+        void steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg);
+
         void loadParameters();
         void checkParameterName( const std::string &parameterName );
         void steeringWheelController();
-
-        sdf::ElementPtr sdfFile;
-
-        physics::ModelPtr carinaModel;
-        physics::LinkPtr chassisLink;
-        physics::JointPtr frontLeftJoint, frontRightJoint;
+        void applyThrottle(const int &action);
+        const std_msgs::Float32 getReward() const;
+        const geometry_msgs::Point32 getState() const;
 
         event::ConnectionPtr updateConnection;
-        transport::NodePtr node;
-        transport::SubscriberPtr throttleSubscriber;
-        transport::SubscriberPtr steeringSubscriber;
+        boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;
 
-        double steeringAngle;
+        sdf::ElementPtr sdfFile;
+        physics::LinkPtr chassisLink;
+        physics::ModelPtr carinaModel;
+        physics::JointPtr frontLeftJoint, frontRightJoint;
+
+        ros::Subscriber actionSubscriber;
+        ros::Subscriber steeringSubscriber;
+        ros::Publisher rewardPublisher;
+        ros::Publisher statePublisher;
+
+        // Angles are in radians. Positive is counterclockwise
+        float steeringAngle;
+        float vehicleVelocity;
     };
     GZ_REGISTER_MODEL_PLUGIN(CarinaPlugin)
 }
