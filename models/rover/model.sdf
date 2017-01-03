@@ -7,7 +7,7 @@
         <link name='chassis'>
             <pose>-0.02 0 0.15 0 0 0</pose>
             <inertial>
-                <mass>50</mass>
+                <mass>10</mass>
             </inertial>
             <collision name='chassis_collision'>
                 <geometry>
@@ -41,8 +41,8 @@
                 <surface>
                     <friction>
                         <ode>
-                            <mu>0.1</mu>
-                            <mu2>0.01</mu2>
+                            <mu>100</mu>
+                            <mu2>50</mu2>
                         </ode>
                     </friction>
                 </surface>
@@ -81,8 +81,8 @@
                 <surface>
                     <friction>
                         <ode>
-                            <mu>0.1</mu>
-                            <mu2>0.01</mu2>
+                            <mu>100</mu>
+                            <mu2>50</mu2>
                         </ode>
                     </friction>
                 </surface>
@@ -121,8 +121,8 @@
                 <surface>
                     <friction>
                         <ode>
-                            <mu>0.1</mu>
-                            <mu2>0.01</mu2>
+                            <mu>100</mu>
+                            <mu2>50</mu2>
                         </ode>
                     </friction>
                 </surface>
@@ -137,19 +137,24 @@
             </visual>
         </link>
 
-        <joint type="universal" name="front_left_joint">
-            <child>front_left_wheel</child>
+        <link name="front_left_connector">
+            <pose>0.3 0.25 0.1 0 1.5707 1.5707</pose>
+        </link>
+
+        <joint type="revolute" name="front_left_joint">
             <parent>chassis</parent>
+            <child>front_left_connector</child>
+            <axis>
+                <xyz>0 0 1</xyz>
+            </axis>
+        </joint>
+
+        <joint type="revolute" name="front_left_joint2">
+            <parent>front_left_connector</parent>
+            <child>front_left_wheel</child>
             <axis>
                 <xyz>0 1 0</xyz>
             </axis>
-            <axis2>
-                <xyz>0 0 1</xyz>
-                <limit>
-                    <lower>-0.61</lower>
-                    <upper>0.61</upper>
-                </limit>
-            </axis2>
         </joint>
 
 
@@ -168,8 +173,8 @@
                 <surface>
                     <friction>
                         <ode>
-                            <mu>0.1</mu>
-                            <mu2>0.01</mu2>
+                            <mu>100</mu>
+                            <mu2>50</mu2>
                         </ode>
                     </friction>
                 </surface>
@@ -184,25 +189,37 @@
             </visual>
         </link>
 
-        <joint type="universal" name="front_right_joint">
-            <child>front_right_wheel</child>
+        <link name="front_right_connector">
+            <pose>0.3 -0.25 0.1 0 1.5707 1.5707</pose>
+        </link>
+
+        <joint type="revolute" name="front_right_joint">
             <parent>chassis</parent>
+            <child>front_right_connector</child>
             <axis>
-                <xyz>0 1 0</xyz>
-            </axis>
-            <axis2>
                 <xyz>0 0 1</xyz>
                 <limit>
                     <lower>-0.61</lower>
                     <upper>0.61</upper>
                 </limit>
-            </axis2>
+            </axis>
         </joint>
+
+        <joint type="revolute" name="front_right_joint2">
+            <parent>front_right_connector</parent>
+            <child>front_right_wheel</child>
+            <axis>
+                <xyz>0 1 0</xyz>
+            </axis>
+        </joint>
+
 
         <plugin name="CarinaPlugin" filename="libCarinaPlugin.so">
             <chassis_name>chassis</chassis_name>
             <front_left_joint>front_left_joint</front_left_joint>
             <front_right_joint>front_right_joint</front_right_joint>
+            <rear_left_joint>rear_left_joint</rear_left_joint>
+            <rear_right_joint>rear_right_joint</rear_right_joint>
         </plugin>
 
     </model>
