@@ -222,9 +222,9 @@ const geometry_msgs::Point32 CarinaPlugin::getState() const
     const float gridSize = 0.2;
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     geometry_msgs::Point32 state;
-    state.x = static_cast<int>(absPosition.x / gridSize);
-    state.y = static_cast<int>(absPosition.y / gridSize);
-    state.z = static_cast<int>(absPosition.z / gridSize);
+    state.x = static_cast<int>( round(absPosition.x / gridSize) );
+    state.y = static_cast<int>( round(absPosition.y / gridSize) );
+    state.z = static_cast<int>( round(absPosition.z / gridSize) );
 
     return state;
 }
