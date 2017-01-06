@@ -13,6 +13,13 @@ find_package(gazebo REQUIRED)
 include_directories( ${GAZEBO_INCLUDE_DIRS} )
 link_directories( ${GAZEBO_LIBRARY_DIRS} )
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
+
+add_library(RoverModel SHARED src/RoverModel.cpp)
+target_link_libraries(RoverModel
+    ${GAZEBO_LIBRARIES}
+    ${Boost_LIBRARIES}
+)
+
 add_library(CarinaPlugin SHARED src/CarinaPlugin.cpp)
 target_link_libraries(CarinaPlugin
     ${GAZEBO_LIBRARIES}
