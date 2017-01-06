@@ -16,15 +16,16 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     int argc = 0;
     char** argv = NULL;
     ros::init(argc, argv, "CarinaPlugin");
-    const unsigned bufferSize = 1;
+    const unsigned buffer_size = 1;
 
     // Ros topics will be used to exchange data.
     ros::NodeHandle rosNode;
-    actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
-    rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
-    positionStatePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state/position", bufferSize);
-    velocityStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/velocity/", bufferSize);
-    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/steering/", bufferSize);
+    actionSubscriber = rosNode.subscribe("/rl/action", buffer_size, &CarinaPlugin::actionCallback, this);
+    rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", buffer_size);
+    positionStatePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state/position", buffer_size);
+    orientationStatePublisher = rosNode.advertise<geometry_msgs::Quaternion>("/rl/state/orientation", buffer_size);
+    velocityStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/velocity/", buffer_size);
+    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/steering/", buffer_size);
 
     async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
@@ -48,6 +49,7 @@ void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 
     rewardPublisher.publish( getReward() );
     positionStatePublisher.publish( getPositionState() );
+    orientationStatePublisher.publish( getOrientationState() );
     velocityStatePublisher.publish( getVelocityState() );
     steeringStatePublisher.publish( getSteeringState() );
 }
@@ -158,11 +160,11 @@ void CarinaPlugin::steeringWheelController()
     // Steering wheel proportional controller.
     // steering_angle is the setpoint in RADIANS
     // max steering_angle (in degrees) = angle_limit * angle_rate
-    const float angle_rate = 3;
+    const float angle_rate = 4;
     const float steering_angle = velocityState * angle_rate * oneDegree;
     const unsigned int rotation_axis = 0;
     const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
-    float angular_velocity = 0.1;
+    float angular_velocity = 0.15;
 
     // Apply a velocity to Z axis until the wheel reaches steeringAngle
     if( current_angle >= 0.01 + steering_angle ){
@@ -174,19 +176,6 @@ void CarinaPlugin::steeringWheelController()
     }
     frontLeftJoint->SetVelocity( rotation_axis, angular_velocity );
     frontRightJoint->SetVelocity( rotation_axis, angular_velocity );
-}
-
-
-// Throttle is the device that controls the amount of gas that goes to the engine.
-void CarinaPlugin::applyThrottle(const int& action)
-{
-    // Define the relation between throttle and impulse force
-    // This depends on: car horsepower, car weight, fuel type...
-    int simulationFactor = 50;
-    float carPower = 1.0;
-    float impulseForce = carPower * simulationFactor * action;
-//    inpulseForce push the vehicle forward.
-//    chassisLink->AddLinkForce( math::Vector3(impulseForce, 0, 0) );
 }
 
 
@@ -206,14 +195,28 @@ const std_msgs::Float32 CarinaPlugin::getReward() const
 
 const geometry_msgs::Point32 CarinaPlugin::getPositionState() const
 {
-    const float gridSize = 0.2;
-    math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
-    geometry_msgs::Point32 state;
-    state.x = round(absPosition.x / gridSize);
-    state.y = round(absPosition.y / gridSize);
-    state.z = round(absPosition.z / gridSize);
+    const float grid_size = 0.2;
+    math::Vector3 abs_position = carinaModel->GetWorldPose().pos;
+    geometry_msgs::Point32 position_state;
+    position_state.x = round( abs_position.x / grid_size );
+    position_state.y = round( abs_position.y / grid_size );
+    position_state.z = round( abs_position.z / grid_size );
 
-    return state;
+    return position_state;
+}
+
+
+const geometry_msgs::Quaternion CarinaPlugin::getOrientationState() const
+{
+    const float grid_size = 0.1;
+    math::Quaternion rotation = carinaModel->GetWorldPose().rot;
+    geometry_msgs::Quaternion orientation_state;
+    orientation_state.w = round( rotation.w / grid_size );
+    orientation_state.x = round( rotation.x / grid_size );
+    orientation_state.y = round( rotation.y / grid_size );
+    orientation_state.z = round( rotation.z / grid_size );
+
+    return orientation_state;
 }
 
 

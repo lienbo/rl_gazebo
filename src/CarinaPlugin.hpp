@@ -10,6 +10,8 @@
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h>
 #include <geometry_msgs/Point32.h>
+#include <geometry_msgs/Quaternion.h>
+
 
 namespace gazebo{
     class CarinaPlugin : public ModelPlugin{
@@ -26,9 +28,9 @@ namespace gazebo{
         void checkParameterName( const std::string &parameterName );
         void velocityController() const;
         void steeringWheelController();
-        void applyThrottle(const int &action);
         const std_msgs::Float32 getReward() const;
         const geometry_msgs::Point32 getPositionState() const;
+        const geometry_msgs::Quaternion getOrientationState() const;
         const std_msgs::Int32 getVelocityState() const;
         const std_msgs::Int32 getSteeringState() const;
 
@@ -44,7 +46,8 @@ namespace gazebo{
         ros::Subscriber actionSubscriber;
         ros::Subscriber steeringSubscriber;
         ros::Publisher rewardPublisher;
-        ros::Publisher positionStatePublisher, velocityStatePublisher, steeringStatePublisher;
+        ros::Publisher positionStatePublisher, orientationStatePublisher;
+        ros::Publisher velocityStatePublisher, steeringStatePublisher;
 
         // Angles are in radians. Positive is counterclockwise
         const float oneDegree;
