@@ -161,7 +161,7 @@ void CarinaPlugin::steeringWheelController()
     // steering_angle is the setpoint in RADIANS
     // max steering_angle (in degrees) = angle_limit * angle_rate
     const float angle_rate = 4;
-    const float steering_angle = velocityState * angle_rate * oneDegree;
+    const float steering_angle = steeringState * angle_rate * oneDegree;
     const unsigned int rotation_axis = 0;
     const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
     float angular_velocity = 0.15;
