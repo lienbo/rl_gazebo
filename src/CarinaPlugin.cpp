@@ -24,7 +24,7 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
     positionStatePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state/position", bufferSize);
     velocityStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/velocity/", bufferSize);
-    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("rl/state/steering/",bufferSize);
+    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/steering/", bufferSize);
 
     async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
@@ -157,8 +157,8 @@ void CarinaPlugin::steeringWheelController()
 {
     // Steering wheel proportional controller.
     // steering_angle is the setpoint in RADIANS
-    // max steering_angle = angle_limit * angle_rate * oneDegree
-    const float angle_rate = 4;
+    // max steering_angle (in degrees) = angle_limit * angle_rate
+    const float angle_rate = 3;
     const float steering_angle = velocityState * angle_rate * oneDegree;
     const unsigned int rotation_axis = 0;
     const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
