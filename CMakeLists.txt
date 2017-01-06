@@ -26,4 +26,4 @@ install(TARGETS CarinaPlugin
     LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 
 install(DIRECTORY models/
-    DESTINATION ${GAZEBO_MODEL_PATH})
+    DESTINATION $ENV{HOME}/.gazebo/models)

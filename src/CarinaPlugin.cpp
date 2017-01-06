@@ -5,7 +5,7 @@ using namespace std;
 using namespace gazebo;
 
 
-CarinaPlugin::CarinaPlugin() : steeringAngle(0), vehicleVelocity(0) {}
+CarinaPlugin::CarinaPlugin() : oneDegree(0.01745), steeringState(0), velocityState(0) {}
 
 
 CarinaPlugin::~CarinaPlugin() {}
@@ -16,13 +16,16 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     int argc = 0;
     char** argv = NULL;
     ros::init(argc, argv, "CarinaPlugin");
-    const unsigned bufferSize = 1;
+    const unsigned buffer_size = 1;
+
     // Ros topics will be used to exchange data.
     ros::NodeHandle rosNode;
-    actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
-    steeringSubscriber = rosNode.subscribe("/steering_angle", bufferSize, &CarinaPlugin::steeringCallback, this);
-    rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
-    statePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state", bufferSize);
+    actionSubscriber = rosNode.subscribe("/rl/action", buffer_size, &CarinaPlugin::actionCallback, this);
+    rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", buffer_size);
+    positionStatePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state/position", buffer_size);
+    orientationStatePublisher = rosNode.advertise<geometry_msgs::Quaternion>("/rl/state/orientation", buffer_size);
+    velocityStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/velocity/", buffer_size);
+    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/steering/", buffer_size);
 
     async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
@@ -41,9 +44,14 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-    carinaModel->SetLinearVel( math::Vector3(vehicleVelocity, 0, 0) );
+    velocityController();
+    steeringWheelController();
+
     rewardPublisher.publish( getReward() );
-    statePublisher.publish( getState() );
+    positionStatePublisher.publish( getPositionState() );
+    orientationStatePublisher.publish( getOrientationState() );
+    velocityStatePublisher.publish( getVelocityState() );
+    steeringStatePublisher.publish( getSteeringState() );
 }
 
 
@@ -72,6 +80,22 @@ void CarinaPlugin::loadParameters()
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
+
+    checkParameterName( "rear_left_joint" );
+    rearLeftJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_left_joint") );
+    if( !rearLeftJoint ){
+        string msg = "CarinaPlugin: " + sdfFile->Get<string>("rear_left_joint") +
+            " not found in " + carinaModel->GetName() + " model";
+        gzmsg << msg << endl;
+    }
+
+    checkParameterName( "rear_right_joint" );
+    rearRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_right_joint") );
+    if( !rearRightJoint ){
+        string msg = "CarinaPlugin: " + sdfFile->Get<string>("rear_right_joint") +
+            " not found in " + carinaModel->GetName() + " model";
+        gzmsg << msg << endl;
+    }
 }
 
 
@@ -89,63 +113,75 @@ void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
 {
     // The vehicle points to the X axis
     // It can go foward and backward (action can be negative)
-    int action;
+    const int speed_limit = 1;
+    const int angle_limit = 5;
+
     switch( actionMsg->data ){
     case(0):
-        action = -1;
+        // Emergency brake
+        velocityState = 0;
         break;
     case(1):
-        action = 0;
+        if( velocityState < speed_limit )
+            velocityState += 1;
         break;
     case(2):
-        action = 1;
+        if( velocityState > - speed_limit )
+            velocityState += - 1;
+        break;
+
+    case(3):
+        if( steeringState < angle_limit )
+            steeringState += 1;
+        break;
+    case(4):
+        if( steeringState > - angle_limit )
+            steeringState += - 1;
+        break;
+    default:
+        gzmsg << "Undefined action !!! " << endl;
         break;
     }
-    float simulationFactor = 0.1;
-    vehicleVelocity = simulationFactor * action;
 }
 
 
-void CarinaPlugin::steeringCallback(const std_msgs::Float32::ConstPtr& steeringMsg)
+void CarinaPlugin::velocityController() const
 {
-    // The steering angle goes from -x to +x where x is the max angle
-    // between the wheel and the car x axis (front of the car)
-    steeringAngle = steeringMsg->data;
+    const float simulation_factor = 1;
+    const float vehicle_velocity = simulation_factor * velocityState;
+
+    rearRightJoint->SetVelocity( 0, vehicle_velocity );
+    rearLeftJoint->SetVelocity( 0, vehicle_velocity );
 }
 
 
 void CarinaPlugin::steeringWheelController()
 {
     // Steering wheel proportional controller.
-    // steeringAngle is the setpoint
-    const unsigned int rotationAxis = 0;
-    const math::Angle currentAngle = frontLeftJoint->GetAngle( rotationAxis );
-    double velocity;
+    // steering_angle is the setpoint in RADIANS
+    // max steering_angle (in degrees) = angle_limit * angle_rate
+    const float angle_rate = 4;
+    const float steering_angle = steeringState * angle_rate * oneDegree;
+    const unsigned int rotation_axis = 0;
+    const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
+    float angular_velocity = 0.15;
 
     // Apply a velocity to Z axis until the wheel reaches steeringAngle
-    ( currentAngle >= 0.01 + steeringAngle ) ? velocity = -5.0 : velocity = 0.0;
-    ( currentAngle <= steeringAngle - 0.01 ) ? velocity = 5.0 : velocity = 0.0;
-    frontLeftJoint->SetVelocity( rotationAxis, velocity );
-    frontRightJoint->SetVelocity( rotationAxis, velocity );
-}
-
-
-// Throttle is the device that controls the amount of gas that goes to the engine.
-void CarinaPlugin::applyThrottle(const int& action)
-{
-    // Define the relation between throttle and impulse force
-    // This depends on: car horsepower, car weight, fuel type...
-    int simulationFactor = 50;
-    float carPower = 1.0;
-    float impulseForce = carPower * simulationFactor * action;
-//    inpulseForce push the vehicle forward.
-//    chassisLink->AddLinkForce( math::Vector3(impulseForce, 0, 0) );
+    if( current_angle >= 0.01 + steering_angle ){
+        angular_velocity *= -1;
+    } else if ( current_angle <= steering_angle - 0.01 ){
+        angular_velocity *= 1;
+    } else {
+        angular_velocity = 0.0;
+    }
+    frontLeftJoint->SetVelocity( rotation_axis, angular_velocity );
+    frontRightJoint->SetVelocity( rotation_axis, angular_velocity );
 }
 
 
 const std_msgs::Float32 CarinaPlugin::getReward() const
 {
-    math::Vector3 setPoint(1.5, 0, 0.1); // 1.5m from world frame origin
+    math::Vector3 setPoint(3.5, 3.5, 0.1); // 1.5m from world frame origin
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     float distance = absPosition.Distance( setPoint );
 //    reward.data = abs(setPoint - absPosition.x) > 0.01 ? -1 : 0;
@@ -157,14 +193,46 @@ const std_msgs::Float32 CarinaPlugin::getReward() const
 }
 
 
-const geometry_msgs::Point32 CarinaPlugin::getState() const
+const geometry_msgs::Point32 CarinaPlugin::getPositionState() const
 {
-    const float gridSize = 0.1;
-    math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
-    geometry_msgs::Point32 state;
-    state.x = static_cast<int>(absPosition.x / gridSize);
-    state.y = static_cast<int>(absPosition.y / gridSize);
-    state.z = static_cast<int>(absPosition.z / gridSize);
+    const float grid_size = 0.2;
+    math::Vector3 abs_position = carinaModel->GetWorldPose().pos;
+    geometry_msgs::Point32 position_state;
+    position_state.x = round( abs_position.x / grid_size );
+    position_state.y = round( abs_position.y / grid_size );
+    position_state.z = round( abs_position.z / grid_size );
 
-    return state;
+    return position_state;
+}
+
+
+const geometry_msgs::Quaternion CarinaPlugin::getOrientationState() const
+{
+    const float grid_size = 0.1;
+    math::Quaternion rotation = carinaModel->GetWorldPose().rot;
+    geometry_msgs::Quaternion orientation_state;
+    orientation_state.w = round( rotation.w / grid_size );
+    orientation_state.x = round( rotation.x / grid_size );
+    orientation_state.y = round( rotation.y / grid_size );
+    orientation_state.z = round( rotation.z / grid_size );
+
+    return orientation_state;
+}
+
+
+const std_msgs::Int32 CarinaPlugin::getVelocityState() const
+{
+    std_msgs::Int32 velocity_state;
+    velocity_state.data = velocityState;
+
+    return velocity_state;
+}
+
+
+const std_msgs::Int32 CarinaPlugin::getSteeringState() const
+{
+    std_msgs::Int32 steering_state;
+    steering_state.data = steeringState;
+
+    return steering_state;
 }
