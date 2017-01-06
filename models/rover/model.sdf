@@ -213,8 +213,7 @@
             </axis>
         </joint>
 
-
-        <plugin name="CarinaPlugin" filename="libCarinaPlugin.so">
+        <plugin name="RosRoverPlugin" filename="libRosRoverPlugin.so">
             <chassis_name>chassis</chassis_name>
             <front_left_joint>front_left_joint</front_left_joint>
             <front_right_joint>front_right_joint</front_right_joint>
