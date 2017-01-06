@@ -24,10 +24,13 @@ namespace gazebo{
 
         void loadParameters();
         void checkParameterName( const std::string &parameterName );
+        void velocityController() const;
         void steeringWheelController();
         void applyThrottle(const int &action);
         const std_msgs::Float32 getReward() const;
-        const geometry_msgs::Point32 getState() const;
+        const geometry_msgs::Point32 getPositionState() const;
+        const std_msgs::Int32 getVelocityState() const;
+        const std_msgs::Int32 getSteeringState() const;
 
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;
@@ -41,11 +44,12 @@ namespace gazebo{
         ros::Subscriber actionSubscriber;
         ros::Subscriber steeringSubscriber;
         ros::Publisher rewardPublisher;
-        ros::Publisher statePublisher;
+        ros::Publisher positionStatePublisher, velocityStatePublisher, steeringStatePublisher;
 
         // Angles are in radians. Positive is counterclockwise
-        float steeringAngle;
-        float vehicleVelocity;
+        const float oneDegree;
+        int steeringState;
+        int velocityState;
     };
     GZ_REGISTER_MODEL_PLUGIN(CarinaPlugin)
 }

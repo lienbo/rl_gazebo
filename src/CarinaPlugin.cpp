@@ -5,7 +5,7 @@ using namespace std;
 using namespace gazebo;
 
 
-CarinaPlugin::CarinaPlugin() : steeringAngle(0), vehicleVelocity(0) {}
+CarinaPlugin::CarinaPlugin() : oneDegree(0.01745), steeringState(0), velocityState(0) {}
 
 
 CarinaPlugin::~CarinaPlugin() {}
@@ -22,7 +22,9 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     ros::NodeHandle rosNode;
     actionSubscriber = rosNode.subscribe("/rl/action", bufferSize, &CarinaPlugin::actionCallback, this);
     rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", bufferSize);
-    statePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state", bufferSize);
+    positionStatePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state/position", bufferSize);
+    velocityStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/velocity/", bufferSize);
+    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("rl/state/steering/",bufferSize);
 
     async_ros_spin.reset(new ros::AsyncSpinner(0));
     async_ros_spin->start();
@@ -41,15 +43,13 @@ void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
 void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
 {
-    const float simulationFactor = 1;
-    const float velocity = simulationFactor * vehicleVelocity;
-
-    rearRightJoint->SetVelocity( 0, velocity );
-    rearLeftJoint->SetVelocity( 0, velocity );
-
+    velocityController();
     steeringWheelController();
+
     rewardPublisher.publish( getReward() );
-    statePublisher.publish( getState() );
+    positionStatePublisher.publish( getPositionState() );
+    velocityStatePublisher.publish( getVelocityState() );
+    steeringStatePublisher.publish( getSteeringState() );
 }
 
 
@@ -111,82 +111,69 @@ void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
 {
     // The vehicle points to the X axis
     // It can go foward and backward (action can be negative)
-    const float speedLimit = 1;
-    const float oneRad = 0.01745;
-    const int angleRate = 2.5;
-    const float angleLimit = 30 * oneRad;
+    const int speed_limit = 1;
+    const int angle_limit = 5;
+
     switch( actionMsg->data ){
     case(0):
-        if( vehicleVelocity > - speedLimit )
-            vehicleVelocity += - 1;
-        if( steeringAngle > - angleLimit)
-            steeringAngle += - angleRate * oneRad;
+        // Emergency brake
+        velocityState = 0;
         break;
     case(1):
-        if( vehicleVelocity > - speedLimit )
-            vehicleVelocity += - 1;
+        if( velocityState < speed_limit )
+            velocityState += 1;
         break;
     case(2):
-        if( vehicleVelocity > - speedLimit )
-            vehicleVelocity += - 1;
-        if( steeringAngle < angleLimit)
-            steeringAngle += + angleRate * oneRad;
+        if( velocityState > - speed_limit )
+            velocityState += - 1;
         break;
 
     case(3):
-        if( steeringAngle > - angleLimit)
-            steeringAngle += - angleRate * oneRad;
+        if( steeringState < angle_limit )
+            steeringState += 1;
         break;
     case(4):
-	    // Dont change velocity or steering angle
+        if( steeringState > - angle_limit )
+            steeringState += - 1;
         break;
-    case(5):
-        if( steeringAngle < angleLimit)
-            steeringAngle += + angleRate * oneRad;
-        break;
-
-    case(6):
-        if( vehicleVelocity < speedLimit )
-            vehicleVelocity += 1;
-        if( steeringAngle > - angleLimit)
-            steeringAngle += - angleRate * oneRad;
-        break;
-    case(7):
-        if( vehicleVelocity < speedLimit )
-            vehicleVelocity += 1;
-        break;
-    case(8):
-        if( vehicleVelocity < speedLimit )
-            vehicleVelocity += 1;
-        if( steeringAngle < angleLimit)
-            steeringAngle += + angleRate * oneRad;
-        break;
-    case(9):
-        // Emergency brake
-        vehicleVelocity = 0;
+    default:
+        gzmsg << "Undefined action !!! " << endl;
         break;
     }
+}
+
+
+void CarinaPlugin::velocityController() const
+{
+    const float simulation_factor = 1;
+    const float vehicle_velocity = simulation_factor * velocityState;
+
+    rearRightJoint->SetVelocity( 0, vehicle_velocity );
+    rearLeftJoint->SetVelocity( 0, vehicle_velocity );
 }
 
 
 void CarinaPlugin::steeringWheelController()
 {
     // Steering wheel proportional controller.
-    // steeringAngle is the setpoint
-    const unsigned int rotationAxis = 0;
-    const math::Angle currentAngle = frontLeftJoint->GetAngle( rotationAxis );
-    float velocity;
+    // steering_angle is the setpoint in RADIANS
+    // max steering_angle = angle_limit * angle_rate * oneDegree
+    const float angle_rate = 4;
+    const float steering_angle = velocityState * angle_rate * oneDegree;
+    const unsigned int rotation_axis = 0;
+    const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
+    float angular_velocity = 0.1;
 
     // Apply a velocity to Z axis until the wheel reaches steeringAngle
-    if( currentAngle >= 0.01 + steeringAngle ){
-        velocity = -0.2;
-    } else if ( currentAngle <= steeringAngle - 0.01 ){
-        velocity = 0.2;
+    if( current_angle >= 0.01 + steering_angle ){
+        angular_velocity *= -1;
+    } else if ( current_angle <= steering_angle - 0.01 ){
+        angular_velocity *= 1;
     } else {
-        velocity = 0.0;
+        angular_velocity = 0.0;
     }
-    frontLeftJoint->SetVelocity( rotationAxis, velocity );
-    frontRightJoint->SetVelocity( rotationAxis, velocity );
+    frontLeftJoint->SetVelocity( rotation_axis, angular_velocity );
+    frontRightJoint->SetVelocity( rotation_axis, angular_velocity );
 }
 
 
@@ -217,14 +204,32 @@ const std_msgs::Float32 CarinaPlugin::getReward() const
 }
 
 
-const geometry_msgs::Point32 CarinaPlugin::getState() const
+const geometry_msgs::Point32 CarinaPlugin::getPositionState() const
 {
     const float gridSize = 0.2;
     math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
     geometry_msgs::Point32 state;
-    state.x = static_cast<int>( round(absPosition.x / gridSize) );
-    state.y = static_cast<int>( round(absPosition.y / gridSize) );
-    state.z = static_cast<int>( round(absPosition.z / gridSize) );
+    state.x = round(absPosition.x / gridSize);
+    state.y = round(absPosition.y / gridSize);
+    state.z = round(absPosition.z / gridSize);
 
     return state;
+}
+
+
+const std_msgs::Int32 CarinaPlugin::getVelocityState() const
+{
+    std_msgs::Int32 velocity_state;
+    velocity_state.data = velocityState;
+
+    return velocity_state;
+}
+
+
+const std_msgs::Int32 CarinaPlugin::getSteeringState() const
+{
+    std_msgs::Int32 steering_state;
+    steering_state.data = steeringState;
+
+    return steering_state;
 }
