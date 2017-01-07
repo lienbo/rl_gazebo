@@ -1,10 +1,12 @@
-// Copyright © 2016 Thomio Watanabe
+// Copyright © 2017 Thomio Watanabe
 // Universidade de Sao Paulo
 // Laboratorio de robotica movel
-// September 2016
+// January 2017
+// Basically this plugin handles ROS topics communication
 
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
+#include "RoverModel.hpp"
 
 #include <ros/ros.h>
 #include <std_msgs/Int32.h>
@@ -14,45 +16,31 @@
 
 
 namespace gazebo{
-    class CarinaPlugin : public ModelPlugin{
+    class RosRoverPlugin : public ModelPlugin{
         public:
-        CarinaPlugin();
-        ~CarinaPlugin();
+        RosRoverPlugin();
+        ~RosRoverPlugin();
 
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
         void onUpdate( const common::UpdateInfo &info );
-        void actionCallback(const std_msgs::Int32::ConstPtr& actionMsg);
 
-        void loadParameters();
-        void checkParameterName( const std::string &parameterName );
-        void velocityController() const;
-        void steeringWheelController();
+        event::ConnectionPtr updateConnection;
+        boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;
+
+        void actionCallback(const std_msgs::Int32::ConstPtr& actionMsg);
         const std_msgs::Float32 getReward() const;
         const geometry_msgs::Point32 getPositionState() const;
         const geometry_msgs::Quaternion getOrientationState() const;
         const std_msgs::Int32 getVelocityState() const;
         const std_msgs::Int32 getSteeringState() const;
 
-        event::ConnectionPtr updateConnection;
-        boost::shared_ptr<ros::AsyncSpinner> async_ros_spin;
-
-        sdf::ElementPtr sdfFile;
-        physics::LinkPtr chassisLink;
-        physics::ModelPtr carinaModel;
-        physics::JointPtr frontLeftJoint, frontRightJoint;
-        physics::JointPtr rearLeftJoint, rearRightJoint;
-
         ros::Subscriber actionSubscriber;
-        ros::Subscriber steeringSubscriber;
         ros::Publisher rewardPublisher;
         ros::Publisher positionStatePublisher, orientationStatePublisher;
         ros::Publisher velocityStatePublisher, steeringStatePublisher;
 
-        // Angles are in radians. Positive is counterclockwise
-        const float oneDegree;
-        int steeringState;
-        int velocityState;
+        boost::shared_ptr<RoverModel> roverModel;
     };
-    GZ_REGISTER_MODEL_PLUGIN(CarinaPlugin)
+    GZ_REGISTER_MODEL_PLUGIN(RosRoverPlugin)
 }

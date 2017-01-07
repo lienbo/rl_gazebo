@@ -1,66 +1,27 @@
-#include "CarinaPlugin.hpp"
-#include <gazebo/transport/transport.hh>
+#include "RoverModel.hpp"
 
 using namespace std;
 using namespace gazebo;
 
 
-CarinaPlugin::CarinaPlugin() : oneDegree(0.01745), steeringState(0), velocityState(0) {}
-
-
-CarinaPlugin::~CarinaPlugin() {}
-
-
-void CarinaPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
+RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf) :
+        steeringState(0), velocityState(0)
 {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc, argv, "CarinaPlugin");
-    const unsigned buffer_size = 1;
-
-    // Ros topics will be used to exchange data.
-    ros::NodeHandle rosNode;
-    actionSubscriber = rosNode.subscribe("/rl/action", buffer_size, &CarinaPlugin::actionCallback, this);
-    rewardPublisher = rosNode.advertise<std_msgs::Float32>("/rl/reward", buffer_size);
-    positionStatePublisher = rosNode.advertise<geometry_msgs::Point32>("/rl/state/position", buffer_size);
-    orientationStatePublisher = rosNode.advertise<geometry_msgs::Quaternion>("/rl/state/orientation", buffer_size);
-    velocityStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/velocity/", buffer_size);
-    steeringStatePublisher = rosNode.advertise<std_msgs::Int32>("/rl/state/steering/", buffer_size);
-
-    async_ros_spin.reset(new ros::AsyncSpinner(0));
-    async_ros_spin->start();
-
     carinaModel = model;
     sdfFile = sdf;
-
     loadParameters();
-
-    // onUpdate is called each simulation step.
-    // It will be used to publish simulation data (sensors, pose, etc).
-    updateConnection = event::Events::ConnectWorldUpdateBegin(
-        boost::bind(&CarinaPlugin::onUpdate, this, _1));
 }
 
 
-void CarinaPlugin::onUpdate( const common::UpdateInfo &info )
-{
-    velocityController();
-    steeringWheelController();
-
-    rewardPublisher.publish( getReward() );
-    positionStatePublisher.publish( getPositionState() );
-    orientationStatePublisher.publish( getOrientationState() );
-    velocityStatePublisher.publish( getVelocityState() );
-    steeringStatePublisher.publish( getSteeringState() );
-}
+RoverModel::~RoverModel() {}
 
 
-void CarinaPlugin::loadParameters()
+void RoverModel::loadParameters()
 {
     checkParameterName( "chassis_name" );
     chassisLink = carinaModel->GetLink( sdfFile->Get<string>("chassis_name") );
     if( !chassisLink ){
-        string msg = "CarinaPlugin: " + sdfFile->Get<string>("chassis_name") +
+        string msg = "RoverModel: " + sdfFile->Get<string>("chassis_name") +
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
@@ -68,7 +29,7 @@ void CarinaPlugin::loadParameters()
     checkParameterName( "front_left_joint" );
     frontLeftJoint = carinaModel->GetJoint( sdfFile->Get<string>("front_left_joint") );
     if( !frontLeftJoint ){
-        string msg = "CarinaPlugin: " + sdfFile->Get<string>("front_left_joint") +
+        string msg = "RoverModel: " + sdfFile->Get<string>("front_left_joint") +
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
@@ -76,7 +37,7 @@ void CarinaPlugin::loadParameters()
     checkParameterName( "front_right_joint" );
     frontRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("front_right_joint") );
     if( !frontRightJoint ){
-        string msg = "CarinaPlugin: " + sdfFile->Get<string>("front_right_joint") +
+        string msg = "RoverModel: " + sdfFile->Get<string>("front_right_joint") +
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
@@ -84,7 +45,7 @@ void CarinaPlugin::loadParameters()
     checkParameterName( "rear_left_joint" );
     rearLeftJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_left_joint") );
     if( !rearLeftJoint ){
-        string msg = "CarinaPlugin: " + sdfFile->Get<string>("rear_left_joint") +
+        string msg = "RoverModel: " + sdfFile->Get<string>("rear_left_joint") +
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
@@ -92,31 +53,31 @@ void CarinaPlugin::loadParameters()
     checkParameterName( "rear_right_joint" );
     rearRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_right_joint") );
     if( !rearRightJoint ){
-        string msg = "CarinaPlugin: " + sdfFile->Get<string>("rear_right_joint") +
+        string msg = "RoverModel: " + sdfFile->Get<string>("rear_right_joint") +
             " not found in " + carinaModel->GetName() + " model";
         gzmsg << msg << endl;
     }
 }
 
 
-void CarinaPlugin::checkParameterName( const string &parameterName )
+void RoverModel::checkParameterName( const string &parameter_name )
 {
     // Quit application if parameterName is not defined in sdf file
-    if( !sdfFile->HasElement( parameterName.c_str() ) ){
-        string msg = "CarinaPlugin: " + parameterName + " parameter not defined in model sdf file.";
+    if( !sdfFile->HasElement( parameter_name.c_str() ) ){
+        string msg = "RoverModel: " + parameter_name + " parameter not defined in model sdf file.";
         gzthrow( msg );
     }
 }
 
 
-void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
+void RoverModel::applyAction(const int &action)
 {
     // The vehicle points to the X axis
     // It can go foward and backward (action can be negative)
     const int speed_limit = 1;
     const int angle_limit = 5;
 
-    switch( actionMsg->data ){
+    switch( action ){
     case(0):
         // Emergency brake
         velocityState = 0;
@@ -145,7 +106,7 @@ void CarinaPlugin::actionCallback(const std_msgs::Int32::ConstPtr &actionMsg)
 }
 
 
-void CarinaPlugin::velocityController() const
+void RoverModel::velocityController() const
 {
     const float simulation_factor = 1;
     const float vehicle_velocity = simulation_factor * velocityState;
@@ -155,13 +116,14 @@ void CarinaPlugin::velocityController() const
 }
 
 
-void CarinaPlugin::steeringWheelController()
+void RoverModel::steeringWheelController()
 {
     // Steering wheel proportional controller.
     // steering_angle is the setpoint in RADIANS
     // max steering_angle (in degrees) = angle_limit * angle_rate
     const float angle_rate = 4;
-    const float steering_angle = steeringState * angle_rate * oneDegree;
+    const float one_degree = 0.01745;
+    const float steering_angle = steeringState * angle_rate * one_degree;
     const unsigned int rotation_axis = 0;
     const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
     float angular_velocity = 0.15;
@@ -179,25 +141,23 @@ void CarinaPlugin::steeringWheelController()
 }
 
 
-const std_msgs::Float32 CarinaPlugin::getReward() const
+const float RoverModel::getReward( math::Vector3 set_point ) const
 {
-    math::Vector3 setPoint(3.5, 3.5, 0.1); // 1.5m from world frame origin
-    math::Vector3 absPosition = carinaModel->GetWorldPose().pos;
-    float distance = absPosition.Distance( setPoint );
-//    reward.data = abs(setPoint - absPosition.x) > 0.01 ? -1 : 0;
-//    reward.data = - distance / ( distance + 4);
-    std_msgs::Float32 reward;
-    reward.data = - distance;
+    math::Vector3 abs_position = carinaModel->GetWorldPose().pos;
+    float distance = abs_position.Distance( set_point );
+//    reward = abs(set_point - abs_position.x) > 0.01 ? -1 : 0;
+//    reward = - distance / ( distance + 4);
+    const float reward = - distance;
 
     return reward;
 }
 
 
-const geometry_msgs::Point32 CarinaPlugin::getPositionState() const
+const math::Vector3 RoverModel::getPositionState() const
 {
     const float grid_size = 0.2;
     math::Vector3 abs_position = carinaModel->GetWorldPose().pos;
-    geometry_msgs::Point32 position_state;
+    math::Vector3 position_state;
     position_state.x = round( abs_position.x / grid_size );
     position_state.y = round( abs_position.y / grid_size );
     position_state.z = round( abs_position.z / grid_size );
@@ -206,11 +166,11 @@ const geometry_msgs::Point32 CarinaPlugin::getPositionState() const
 }
 
 
-const geometry_msgs::Quaternion CarinaPlugin::getOrientationState() const
+const math::Quaternion RoverModel::getOrientationState() const
 {
     const float grid_size = 0.1;
     math::Quaternion rotation = carinaModel->GetWorldPose().rot;
-    geometry_msgs::Quaternion orientation_state;
+    math::Quaternion orientation_state;
     orientation_state.w = round( rotation.w / grid_size );
     orientation_state.x = round( rotation.x / grid_size );
     orientation_state.y = round( rotation.y / grid_size );
@@ -220,19 +180,15 @@ const geometry_msgs::Quaternion CarinaPlugin::getOrientationState() const
 }
 
 
-const std_msgs::Int32 CarinaPlugin::getVelocityState() const
+const int RoverModel::getVelocityState() const
 {
-    std_msgs::Int32 velocity_state;
-    velocity_state.data = velocityState;
-
+    const int velocity_state = velocityState;
     return velocity_state;
 }
 
 
-const std_msgs::Int32 CarinaPlugin::getSteeringState() const
+const int RoverModel::getSteeringState() const
 {
-    std_msgs::Int32 steering_state;
-    steering_state.data = steeringState;
-
+    const int steering_state = steeringState;
     return steering_state;
 }
