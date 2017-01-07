@@ -21,9 +21,16 @@ target_link_libraries(RosRoverPlugin
     ${catkin_LIBRARIES}
 )
 
+add_library(RoverModel SHARED src/RoverModel.cpp src/QLearner.cpp)
+target_link_libraries(RoverModel
+    ${GAZEBO_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${catkin_LIBRARIES}
+)
+
 
 ### Install plugin and models
-install(TARGETS RosRoverPlugin
+install(TARGETS RosRoverPlugin RoverModel
     LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 
 install(DIRECTORY models/
