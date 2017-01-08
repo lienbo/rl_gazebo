@@ -15,8 +15,9 @@ RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
+    const unsigned num_actions = 5;
+    rlAgent = boost::make_shared<QLearner>( num_actions );
     roverModel = boost::make_shared<RoverModel>(model, sdf);
-    rlAgent = boost::make_shared<QLearner>();
 
     // onUpdate is called each simulation step.
     // It will be used to publish simulation data (sensors, pose, etc).
@@ -24,6 +25,7 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
         boost::bind(&RoverPlugin::onUpdate, this, _1));
 
     actionTimer.Start();
+
     // Apply first action
     vector<float> observed_state = getState();
     const unsigned action = rlAgent->chooseAction( observed_state );

@@ -27,7 +27,7 @@ bool State::compareState( const vector<float> &observed_state )
 
 
 
-QLearner::QLearner() : alpha(0.1), gamma(0.95), numActions(5) {}
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), numActions( num_actions ) {}
 
 
 QLearner::~QLearner() {}

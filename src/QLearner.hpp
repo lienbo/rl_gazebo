@@ -20,7 +20,7 @@ struct State{
 
 class QLearner{
     public:
-    QLearner();
+    QLearner( const unsigned &num_actions );
     ~QLearner();
 
     typedef std::vector<State> StatesContainer;
