@@ -28,8 +28,10 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
     // Apply first action
     vector<float> observed_state = getState();
+    printState( observed_state );
     const unsigned action = rlAgent->chooseAction( observed_state );
     roverModel->applyAction(action);
+    gzmsg << "Applying action = " << action << endl;
 }
 
 
@@ -40,15 +42,18 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 
     common::Time elapsedTime = actionTimer.GetElapsed();
     if( elapsedTime >= actionInterval ){
-        vector<float> observed_state = getState();
 
-        observed_state = getState();
+        vector<float> observed_state = getState();
         rlAgent->updateQValues( roverModel->getReward(setPoint), observed_state );
 
         const unsigned action = rlAgent->chooseAction( observed_state );
-        roverModel->applyAction(action);
+        roverModel->applyAction( action );
+
+        printState( observed_state );
+        gzmsg << "Applying action = " << action << endl;
 
         actionTimer.Reset();
+        actionTimer.Start();
     }
 }
 
@@ -74,4 +79,18 @@ vector<float> RoverPlugin::getState()
     observed_state.push_back( steering );
 
     return observed_state;
+}
+
+
+void RoverPlugin::printState( const vector<float> &observed_state )
+{
+    vector<float>::const_iterator it;
+    gzmsg << endl;
+    stringstream stream;
+    stream << "State = ( ";
+    for(it = observed_state.begin(); it != observed_state.end(); ++it)
+        stream << setprecision(2) << *it << " ";
+    stream << ")";
+
+    gzmsg << stream.str() << endl;
 }

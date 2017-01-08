@@ -1,4 +1,5 @@
 #include "QLearner.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -27,7 +28,10 @@ bool State::compareState( const vector<float> &observed_state )
 
 
 
-QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), numActions( num_actions ) {}
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), numActions( num_actions )
+{
+    qlearnerStates.clear();
+}
 
 
 QLearner::~QLearner() {}
@@ -36,7 +40,7 @@ QLearner::~QLearner() {}
 QLearner::StatesContainer::iterator QLearner::fetchState( const vector<float> &observed_state )
 {
     StatesContainer::iterator state_it;
-    for(state_it = qlearnerStates.begin(); state_it == qlearnerStates.end(); ++state_it){
+    for(state_it = qlearnerStates.begin(); state_it != qlearnerStates.end(); ++state_it){
         if( state_it->compareState( observed_state ) ){
             // Found state. Break loop
             break;

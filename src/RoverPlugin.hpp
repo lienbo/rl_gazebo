@@ -19,6 +19,7 @@ namespace gazebo{
         void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
         void onUpdate( const common::UpdateInfo &info );
         std::vector<float> getState();
+        void printState( const std::vector<float> &observed_state );
 
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;
