@@ -1,5 +1,5 @@
-#ifndef ROVERMODEL_HPP
-#define ROVERMODEL_HPP
+#ifndef ROVERMODEL_HPP_
+#define ROVERMODEL_HPP_
 
 // Copyright © 2017 Thomio Watanabe
 // Universidade de Sao Paulo

@@ -1,3 +1,4 @@
+#include <boost/make_shared.hpp>
 #include "RoverPlugin.hpp"
 
 using namespace std;
@@ -26,17 +27,17 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     roverModel->steeringWheelController();
 
     vector<float> observed_state = getState();
-    const unsigned action = agent->chooseAction( observed_state );
+    const unsigned action = rlAgent->chooseAction( observed_state );
     roverModel->applyAction(action);
 
     // Wait few seconds
     observed_state = getState();
     math::Vector3 set_point(3.5, 3.5, 0.1);
-    agent->updateQValue( roverModel->getReward(set_point), observed_state );
+    rlAgent->updateQValues( roverModel->getReward(set_point), observed_state );
 }
 
 
-vector<float> getState()
+vector<float> RoverPlugin::getState()
 {
     vector<float> observed_state;
     math::Vector3 position = roverModel->getPositionState();

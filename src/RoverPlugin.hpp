@@ -20,6 +20,7 @@ namespace gazebo{
         void onUpdate( const common::UpdateInfo &info );
         std::vector<float> getState(); 
 
+        event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;
         boost::shared_ptr<QLearner> rlAgent;
     };
