@@ -5,7 +5,11 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() {}
+RoverPlugin::RoverPlugin() {
+    actionTimer.Reset();
+    actionInterval.Set(1,0);
+    setPoint.Set(3.5, 3.5, 0.1);
+}
 
 RoverPlugin::~RoverPlugin() {}
 
@@ -18,6 +22,12 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     // It will be used to publish simulation data (sensors, pose, etc).
     updateConnection = event::Events::ConnectWorldUpdateBegin(
         boost::bind(&RoverPlugin::onUpdate, this, _1));
+
+    actionTimer.Start();
+    // Apply first action
+    vector<float> observed_state = getState();
+    const unsigned action = rlAgent->chooseAction( observed_state );
+    roverModel->applyAction(action);
 }
 
 
@@ -26,14 +36,18 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     roverModel->velocityController();
     roverModel->steeringWheelController();
 
-    vector<float> observed_state = getState();
-    const unsigned action = rlAgent->chooseAction( observed_state );
-    roverModel->applyAction(action);
+    common::Time elapsedTime = actionTimer.GetElapsed();
+    if( elapsedTime >= actionInterval ){
+        vector<float> observed_state = getState();
 
-    // Wait few seconds
-    observed_state = getState();
-    math::Vector3 set_point(3.5, 3.5, 0.1);
-    rlAgent->updateQValues( roverModel->getReward(set_point), observed_state );
+        observed_state = getState();
+        rlAgent->updateQValues( roverModel->getReward(setPoint), observed_state );
+
+        const unsigned action = rlAgent->chooseAction( observed_state );
+        roverModel->applyAction(action);
+
+        actionTimer.Reset();
+    }
 }
 
 

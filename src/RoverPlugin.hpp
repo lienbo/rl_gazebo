@@ -18,11 +18,15 @@ namespace gazebo{
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
         void onUpdate( const common::UpdateInfo &info );
-        std::vector<float> getState(); 
+        std::vector<float> getState();
 
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;
         boost::shared_ptr<QLearner> rlAgent;
+        // Counts the time between the action and its result
+        common::Timer actionTimer;
+        common::Time actionInterval;
+        math::Vector3 setPoint;
     };
     GZ_REGISTER_MODEL_PLUGIN(RoverPlugin)
 }
