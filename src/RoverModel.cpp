@@ -160,7 +160,7 @@ const math::Vector3 RoverModel::getPositionState() const
     math::Vector3 position_state;
     position_state.x = round( abs_position.x / grid_size );
     position_state.y = round( abs_position.y / grid_size );
-    position_state.z = round( abs_position.z / grid_size );
+    position_state.z = round( abs_position.z / (grid_size + 0.1));
 
     return position_state;
 }
@@ -172,9 +172,9 @@ const math::Quaternion RoverModel::getOrientationState() const
     math::Quaternion rotation = carinaModel->GetWorldPose().rot;
     math::Quaternion orientation_state;
     orientation_state.w = round( rotation.w / grid_size );
-    orientation_state.x = round( rotation.x / grid_size );
-    orientation_state.y = round( rotation.y / grid_size );
-    orientation_state.z = round( rotation.z / grid_size );
+    orientation_state.x = round( (rotation.x + 0.0001 )/ grid_size );
+    orientation_state.y = round( (rotation.y + 0.0001 )/ grid_size );
+    orientation_state.z = round( (rotation.z)/ grid_size );
 
     return orientation_state;
 }
