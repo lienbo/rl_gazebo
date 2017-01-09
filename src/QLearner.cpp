@@ -4,7 +4,7 @@
 using namespace std;
 
 
-State::State( unsigned num_actions, const vector<float> &observed_state ) : maxQValue(0), action(0)
+State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0), maxQValue(0), action(0)
 {
     // Each state is defined by its state values
     stateValues = observed_state;
@@ -28,7 +28,7 @@ bool State::compareState( const vector<float> &observed_state )
 
 
 
-QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), numActions( num_actions )
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), numActions( num_actions ), uniformDist(0,num_actions - 1), bernoulliDist(0.5)
 {
     qlearnerStates.clear();
 }
@@ -55,24 +55,37 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state )
 
     // The action is the iterator position.
     // Never change the vector order (sort)
-    vector<float> &qvalues = state_it->QValues;
+    State &current_state = *state_it;
+    vector<float> &qvalues = current_state.QValues;
     vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
-
-    state_it->action = distance( qvalues.begin(), action_it );
-    state_it->action_it = action_it;
-    state_it->maxQValue = *action_it;
+    current_state.action = distance( qvalues.begin(), action_it );
+    current_state.maxQValue = *action_it;
+    current_state.QValue = *action_it;
 
     const unsigned state_index = distance( qlearnerStates.begin(), state_it );
     return state_index;
 }
 
 
-const unsigned QLearner::chooseAction( const vector<float> &observed_state )
+
+const unsigned QLearner::chooseAction( const vector<float> &observed_state, const bool &training )
 {
     unsigned state_index = fetchState( observed_state );
+
+    State &current_state = qlearnerStates[state_index];
+    if( training ){
+        // Bernoulli distribution to change action
+        if( bernoulliDist(generator) ){
+            // Equal (uniform) probability to choose an action
+            const unsigned action = uniformDist(generator);
+            current_state.action = action;
+            current_state.QValue = current_state.QValues[action];
+        }
+    }
+
     lastIndex = state_index;
 
-    return qlearnerStates[state_index].action;
+    return current_state.action;
 }
 
 
@@ -85,5 +98,5 @@ void QLearner::updateQValues( const float& reward, const vector<float> &observed
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
     // lastAction points to the qvalue associated with the last action.
-    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * (qlearnerStates[current_index].maxQValue) - (last_state.maxQValue) );
+    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * (qlearnerStates[current_index].maxQValue) - (last_state.QValue) );
 }
