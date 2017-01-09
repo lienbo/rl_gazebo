@@ -20,8 +20,8 @@ namespace gazebo{
         void steeringWheelController();
 
         void applyAction(const int &action);
-        const float getReward( math::Vector3 set_point ) const;
-
+        const float getReward( math::Vector3 setpoint ) const;
+        const math::Vector3 getDistanceState( math::Vector3 setpoint ) const;
         const math::Vector3 getPositionState() const;
         const math::Quaternion getOrientationState() const;
         const int getVelocityState() const;
@@ -33,7 +33,7 @@ namespace gazebo{
 
         sdf::ElementPtr sdfFile;
         physics::LinkPtr chassisLink;
-        physics::ModelPtr carinaModel;
+        physics::ModelPtr modelPtr;
         physics::JointPtr frontLeftJoint, frontRightJoint;
         physics::JointPtr rearLeftJoint, rearRightJoint;
 

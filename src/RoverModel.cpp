@@ -7,7 +7,7 @@ using namespace gazebo;
 RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf) :
         steeringState(0), velocityState(0)
 {
-    carinaModel = model;
+    modelPtr = model;
     sdfFile = sdf;
     loadParameters();
 }
@@ -19,42 +19,42 @@ RoverModel::~RoverModel() {}
 void RoverModel::loadParameters()
 {
     checkParameterName( "chassis_name" );
-    chassisLink = carinaModel->GetLink( sdfFile->Get<string>("chassis_name") );
+    chassisLink = modelPtr->GetLink( sdfFile->Get<string>("chassis_name") );
     if( !chassisLink ){
         string msg = "RoverModel: " + sdfFile->Get<string>("chassis_name") +
-            " not found in " + carinaModel->GetName() + " model";
+            " not found in " + modelPtr->GetName() + " model";
         gzmsg << msg << endl;
     }
 
     checkParameterName( "front_left_joint" );
-    frontLeftJoint = carinaModel->GetJoint( sdfFile->Get<string>("front_left_joint") );
+    frontLeftJoint = modelPtr->GetJoint( sdfFile->Get<string>("front_left_joint") );
     if( !frontLeftJoint ){
         string msg = "RoverModel: " + sdfFile->Get<string>("front_left_joint") +
-            " not found in " + carinaModel->GetName() + " model";
+            " not found in " + modelPtr->GetName() + " model";
         gzmsg << msg << endl;
     }
 
     checkParameterName( "front_right_joint" );
-    frontRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("front_right_joint") );
+    frontRightJoint = modelPtr->GetJoint( sdfFile->Get<string>("front_right_joint") );
     if( !frontRightJoint ){
         string msg = "RoverModel: " + sdfFile->Get<string>("front_right_joint") +
-            " not found in " + carinaModel->GetName() + " model";
+            " not found in " + modelPtr->GetName() + " model";
         gzmsg << msg << endl;
     }
 
     checkParameterName( "rear_left_joint" );
-    rearLeftJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_left_joint") );
+    rearLeftJoint = modelPtr->GetJoint( sdfFile->Get<string>("rear_left_joint") );
     if( !rearLeftJoint ){
         string msg = "RoverModel: " + sdfFile->Get<string>("rear_left_joint") +
-            " not found in " + carinaModel->GetName() + " model";
+            " not found in " + modelPtr->GetName() + " model";
         gzmsg << msg << endl;
     }
 
     checkParameterName( "rear_right_joint" );
-    rearRightJoint = carinaModel->GetJoint( sdfFile->Get<string>("rear_right_joint") );
+    rearRightJoint = modelPtr->GetJoint( sdfFile->Get<string>("rear_right_joint") );
     if( !rearRightJoint ){
         string msg = "RoverModel: " + sdfFile->Get<string>("rear_right_joint") +
-            " not found in " + carinaModel->GetName() + " model";
+            " not found in " + modelPtr->GetName() + " model";
         gzmsg << msg << endl;
     }
 }
@@ -144,11 +144,11 @@ void RoverModel::steeringWheelController()
 }
 
 
-const float RoverModel::getReward( math::Vector3 set_point ) const
+const float RoverModel::getReward( math::Vector3 setpoint ) const
 {
-    math::Vector3 abs_position = carinaModel->GetWorldPose().pos;
-    float distance = abs_position.Distance( set_point );
-//    reward = abs(set_point - abs_position.x) > 0.01 ? -1 : 0;
+    math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
+    float distance = abs_position.Distance( setpoint );
+//    reward = abs(setpoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
     const float reward = - distance;
 
@@ -156,14 +156,25 @@ const float RoverModel::getReward( math::Vector3 set_point ) const
 }
 
 
+const math::Vector3 RoverModel::getDistanceState( math::Vector3 setpoint ) const
+{
+    const float grid_size = 0.2;
+    math::Vector3 distance = modelPtr->GetWorldPose().pos;
+    distance.x = round(( setpoint.x - distance.x ) / grid_size);
+    distance.y = round(( setpoint.y - distance.y ) / grid_size);
+    distance.z = round(( setpoint.z - distance.z ) / grid_size);
+
+    return distance;
+}
+
+
 const math::Vector3 RoverModel::getPositionState() const
 {
     const float grid_size = 0.2;
-    math::Vector3 abs_position = carinaModel->GetWorldPose().pos;
-    math::Vector3 position_state;
-    position_state.x = round( abs_position.x / grid_size );
-    position_state.y = round( abs_position.y / grid_size );
-    position_state.z = round( abs_position.z / (grid_size + 0.1));
+    math::Vector3 position_state = modelPtr->GetWorldPose().pos;
+    position_state.x = round( position_state.x / grid_size );
+    position_state.y = round( position_state.y / grid_size );
+    position_state.z = round( position_state.z / (grid_size + 0.1));
 
     return position_state;
 }
@@ -172,7 +183,7 @@ const math::Vector3 RoverModel::getPositionState() const
 const math::Quaternion RoverModel::getOrientationState() const
 {
     const float grid_size = 0.1;
-    math::Quaternion rotation = carinaModel->GetWorldPose().rot;
+    math::Quaternion rotation = modelPtr->GetWorldPose().rot;
     math::Quaternion orientation_state;
     orientation_state.w = round( rotation.w / grid_size );
     orientation_state.x = round( (rotation.x + 0.0001 )/ grid_size );

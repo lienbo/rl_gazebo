@@ -62,10 +62,11 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 vector<float> RoverPlugin::getState()
 {
     vector<float> observed_state;
-    math::Vector3 position = roverModel->getPositionState();
-    observed_state.push_back( position.x );
-    observed_state.push_back( position.y );
-    observed_state.push_back( position.z );
+
+    math::Vector3 distance = roverModel->getDistanceState( setPoint );
+    observed_state.push_back( distance.x );
+    observed_state.push_back( distance.y );
+    observed_state.push_back( distance.z );
 
     math::Quaternion orientation = roverModel->getOrientationState();
     observed_state.push_back( orientation.w );
