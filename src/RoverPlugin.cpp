@@ -44,7 +44,8 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     if( elapsedTime >= actionInterval ){
 
         vector<float> observed_state = getState();
-        rlAgent->updateQValues( roverModel->getReward(setPoint), observed_state );
+        const float reward = roverModel->getReward(setPoint);
+        rlAgent->updateQValues( reward, observed_state );
 
         const unsigned action = rlAgent->chooseAction( observed_state );
         roverModel->applyAction( action );

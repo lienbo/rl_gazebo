@@ -37,7 +37,7 @@ QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), num
 QLearner::~QLearner() {}
 
 
-QLearner::StatesContainer::iterator QLearner::fetchState( const vector<float> &observed_state )
+const unsigned QLearner::fetchState( const vector<float> &observed_state )
 {
     StatesContainer::iterator state_it;
     for(state_it = qlearnerStates.begin(); state_it != qlearnerStates.end(); ++state_it){
@@ -55,33 +55,35 @@ QLearner::StatesContainer::iterator QLearner::fetchState( const vector<float> &o
 
     // The action is the iterator position.
     // Never change the vector order (sort)
-    vector<float> qvalues = state_it->QValues;
+    vector<float> &qvalues = state_it->QValues;
     vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
 
     state_it->action = distance( qvalues.begin(), action_it );
     state_it->action_it = action_it;
     state_it->maxQValue = *action_it;
 
-    return state_it;
+    const unsigned state_index = distance( qlearnerStates.begin(), state_it );
+    return state_index;
 }
 
 
 const unsigned QLearner::chooseAction( const vector<float> &observed_state )
 {
-    StatesContainer::iterator state_it = fetchState( observed_state );
-    lastState = state_it;
+    unsigned state_index = fetchState( observed_state );
+    lastIndex = state_index;
 
-    return state_it->action;
+    return qlearnerStates[state_index].action;
 }
 
 
 // reward is related to the transition from last state to the current state
 void QLearner::updateQValues( const float& reward, const vector<float> &observed_state )
 {
-    StatesContainer::iterator current_state = fetchState( observed_state );
+    const unsigned current_index = fetchState( observed_state );
+    State &last_state = qlearnerStates[lastIndex];
 
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
     // lastAction points to the qvalue associated with the last action.
-    *(lastState->action_it) += alpha * ( reward + gamma * (current_state->maxQValue) - (lastState->maxQValue) );
+    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * (qlearnerStates[current_index].maxQValue) - (last_state.maxQValue) );
 }

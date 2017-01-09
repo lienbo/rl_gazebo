@@ -30,10 +30,10 @@ class QLearner{
     private:
     float alpha, gamma;
     unsigned numActions;
+    unsigned lastIndex;
     // There may be an infinity number of states, thus states must be stored in dynamic vectors
     StatesContainer qlearnerStates;
-    StatesContainer::iterator lastState;
-    StatesContainer::iterator fetchState( const std::vector<float> &observed_state );
+    const unsigned fetchState( const std::vector<float> &observed_state );
 };
 
 #endif
