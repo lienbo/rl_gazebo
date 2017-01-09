@@ -79,8 +79,7 @@ void RoverModel::applyAction(const int &action)
 
     switch( action ){
     case(0):
-        // Emergency brake
-        velocityState = 0;
+        // Do nothing
         break;
     case(1):
         if( velocityState < speed_limit )
@@ -98,6 +97,10 @@ void RoverModel::applyAction(const int &action)
     case(4):
         if( steeringState > - angle_limit )
             steeringState += - 1;
+        break;
+    case(5):
+        // Emergency brake
+        velocityState = 0;
         break;
     default:
         gzmsg << "Undefined action !!! " << endl;

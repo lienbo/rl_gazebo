@@ -15,7 +15,7 @@ RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    const unsigned num_actions = 5;
+    const unsigned num_actions = 6;
     rlAgent = boost::make_shared<QLearner>( num_actions );
     roverModel = boost::make_shared<RoverModel>(model, sdf);
 
@@ -43,8 +43,8 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     common::Time elapsedTime = actionTimer.GetElapsed();
     if( elapsedTime >= actionInterval ){
 
-        vector<float> observed_state = getState();
         const float reward = roverModel->getReward(setPoint);
+        vector<float> observed_state = getState();
         rlAgent->updateQValues( reward, observed_state );
 
         const unsigned action = rlAgent->chooseAction( observed_state );
