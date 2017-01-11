@@ -11,13 +11,17 @@ RoverPlugin::RoverPlugin() {
     setPoint.Set(3.5, 3.5, 0.1);
 }
 
-RoverPlugin::~RoverPlugin() {}
+RoverPlugin::~RoverPlugin() {
+    rlAgent->savePolicy();
+}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
     const unsigned num_actions = 6;
     rlAgent = boost::make_shared<QLearner>( num_actions );
     roverModel = boost::make_shared<RoverModel>(model, sdf);
+
+    rlAgent->loadPolicy();
 
     // onUpdate is called each simulation step.
     // It will be used to publish simulation data (sensors, pose, etc).

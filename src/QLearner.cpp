@@ -1,7 +1,16 @@
-#include "QLearner.hpp"
+#include <boost/algorithm/string.hpp>
+#include <fstream>
 #include <iostream>
+#include "QLearner.hpp"
 
 using namespace std;
+
+
+State::State( vector<float> qvalues, const vector<float> &state ) : QValue(0), maxQValue(0), action(0)
+{
+    QValues = qvalues;
+    stateValues = state;
+}
 
 
 State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0), maxQValue(0), action(0)
@@ -99,4 +108,65 @@ void QLearner::updateQValues( const float& reward, const vector<float> &observed
     // This updates the last QValues state instead of the current one.
     // lastAction points to the qvalue associated with the last action.
     last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * (qlearnerStates[current_index].maxQValue) - (last_state.QValue) );
+}
+
+
+void QLearner::savePolicy()
+{
+    // Save a NEW files with qvalues and state.
+    // Old files are lost
+    string state_file_name("qlearner_states.txt");
+    string policy_file_name("qlearner_policy.txt");
+    ofstream policy_file, state_file;
+    policy_file.open( policy_file_name.c_str(), ios::out );
+    state_file.open( state_file_name.c_str(), ios::out );
+
+    for(StatesContainer::iterator it = qlearnerStates.begin();
+            it != qlearnerStates.end(); ++it){
+        ostream_iterator<float> qvalue_iterator(policy_file, " ");
+        copy(it->QValues.begin(), it->QValues.end(), qvalue_iterator);
+        policy_file << "\n";
+
+        ostream_iterator<float> state_iterator(state_file, " ");
+        copy(it->stateValues.begin(), it->stateValues.end(), state_iterator);
+        state_file << "\n";
+    }
+
+    policy_file.close();
+    state_file.close();
+}
+
+
+void QLearner::loadPolicy()
+{
+    qlearnerStates.clear();
+
+    string state_file_name("qlearner_states.txt");
+    string policy_file_name("qlearner_policy.txt");
+    ifstream policy_file, state_file;
+    policy_file.open( policy_file_name.c_str(), ios::in );
+    state_file.open( state_file_name.c_str(), ios::in );
+
+    string policy_line, state_line;
+    while( getline( policy_file, policy_line) && getline( state_file, state_line ) ){
+        vector<float> qvalues, state_values;
+        vector<string> qvalues_str, state_str;
+
+        boost::split( qvalues_str, policy_line, boost::is_any_of(" ") );
+        // Remove /n char
+        qvalues_str.pop_back();
+        for(vector<string>::iterator it = qvalues_str.begin(); it != qvalues_str.end(); ++it)
+            qvalues.push_back( stof(*it) );
+
+        boost::split( state_str, state_line, boost::is_any_of(" ") );
+        state_str.pop_back();
+        for(vector<string>::iterator it = state_str.begin(); it != state_str.end(); ++it)
+            state_values.push_back( stof(*it) );
+
+        State state( qvalues, state_values );
+        qlearnerStates.push_back( state );
+    }
+
+    policy_file.close();
+    state_file.close();
 }

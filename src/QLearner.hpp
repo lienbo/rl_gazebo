@@ -8,6 +8,7 @@
 
 struct State{
     State( unsigned num_actions, const std::vector<float> &observed_state );
+    State( std::vector<float> qvalues, const std::vector<float> &state );
     ~State();
 
     unsigned action;
@@ -27,6 +28,8 @@ class QLearner{
     typedef std::vector<State> StatesContainer;
     const unsigned chooseAction( const std::vector<float> &observed_state, const bool &training = true );
     void updateQValues( const float& reward, const std::vector<float> &observed_state );
+    void loadPolicy();
+    void savePolicy();
 
     private:
     float alpha, gamma;
