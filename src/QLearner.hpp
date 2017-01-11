@@ -26,6 +26,7 @@ class QLearner{
     ~QLearner();
 
     typedef std::vector<State> StatesContainer;
+    const bool isNewState( const std::vector<float> &observed_state );
     const unsigned chooseAction( const std::vector<float> &observed_state, const bool &training = true );
     void updateQValues( const float& reward, const std::vector<float> &observed_state );
     void loadPolicy();

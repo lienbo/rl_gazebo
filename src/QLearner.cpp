@@ -1,4 +1,5 @@
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include <fstream>
 #include <iostream>
 #include "QLearner.hpp"
@@ -44,6 +45,21 @@ QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), num
 
 
 QLearner::~QLearner() {}
+
+
+const bool QLearner::isNewState( const vector<float> &observed_state )
+{
+   StatesContainer::iterator state_it;
+    for(state_it = qlearnerStates.begin(); state_it != qlearnerStates.end(); ++state_it){
+        if( state_it->compareState( observed_state ) ){
+            // Found state. Break loop
+            break;
+	    }
+    }
+
+    // Iterator is equal to qlearnerStates.end() if no state was found
+    return (state_it == qlearnerStates.end()) ? true : false;
+}
 
 
 const unsigned QLearner::fetchState( const vector<float> &observed_state )
@@ -115,8 +131,11 @@ void QLearner::savePolicy()
 {
     // Save a NEW files with qvalues and state.
     // Old files are lost
-    string state_file_name("qlearner_states.txt");
-    string policy_file_name("qlearner_policy.txt");
+    boost::filesystem::path dir( "./policy/" );
+    boost::filesystem::create_directory(dir);
+
+    string state_file_name("./policy/qlearner_states.txt");
+    string policy_file_name("./policy/qlearner_policy.txt");
     ofstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::out );
     state_file.open( state_file_name.c_str(), ios::out );
@@ -141,8 +160,8 @@ void QLearner::loadPolicy()
 {
     qlearnerStates.clear();
 
-    string state_file_name("qlearner_states.txt");
-    string policy_file_name("qlearner_policy.txt");
+    string state_file_name("./policy/qlearner_states.txt");
+    string policy_file_name("./policy/qlearner_policy.txt");
     ifstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::in );
     state_file.open( state_file_name.c_str(), ios::in );
