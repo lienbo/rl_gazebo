@@ -256,8 +256,9 @@ bool RoverModel::checkCollision()
 }
 
 
-void RoverModel::resetModel() const
+void RoverModel::resetModel()
 {
-    modelPtr->ResetPhysicsStates();
     modelPtr->Reset();
+    velocityState = 0;
+    steeringState = 0;
 }

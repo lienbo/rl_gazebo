@@ -21,7 +21,7 @@ namespace gazebo{
         void steeringWheelController();
 
         bool checkCollision();
-        void resetModel() const;
+        void resetModel();
 
         void applyAction(const int &action);
         const float getReward( math::Vector3 setpoint ) const;

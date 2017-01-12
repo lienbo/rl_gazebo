@@ -41,7 +41,7 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
     // Apply first action
     vector<float> observed_state = getState();
-    if( rlAgent->isNewState( observed_state) ){
+    if( rlAgent->isNewState( observed_state ) ){
         string image_name = "./images/" + to_string(numStates) + ".png";
         cameraPtr->SaveFrame( image_name );
         ++numStates;
@@ -72,15 +72,15 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     if( elapsedTime >= actionInterval ){
         const float reward = roverModel->getReward(setPoint);
         vector<float> observed_state = getState();
-        rlAgent->updateQValues( reward, observed_state );
         if( rlAgent->isNewState( observed_state) ){
             string image_name = "./images/" + to_string(numStates) + ".png";
             cameraPtr->SaveFrame( image_name );
             ++numStates;
         }
+        rlAgent->updateQValues( reward, observed_state );
 
         // Terminal state
-        if( reward <= 0.2 )
+        if( reward > -0.2 )
             roverModel->resetModel();
 
         const unsigned action = rlAgent->chooseAction( observed_state );
