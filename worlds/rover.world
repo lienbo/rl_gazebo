@@ -1,6 +1,11 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
     <world name="default">
+        <scene>
+            <grid>false</grid>
+            <origin_visual>false</origin_visual>
+        </scene>
+
         <include>
             <uri>model://sun</uri>
         </include>
@@ -12,5 +17,40 @@
         <include>
             <uri>model://rover</uri>
         </include>
+
+        <include>
+            <uri>model://walls</uri>
+        </include>
+
+        <include>
+            <uri>model://box_obstacle</uri>
+            <name>box_obstacle_01</name>
+            <pose>3.5 3.5 0.5 0 0 0</pose>
+        </include>
+
+        <include>
+            <uri>model://box_obstacle</uri>
+            <name>box_obstacle_02</name>
+            <pose>-3.5 3.5 0.5 0 0 0</pose>
+        </include>
+
+        <include>
+            <uri>model://box_obstacle</uri>
+            <name>box_obstacle_03</name>
+            <pose>-3.5 -3.5 0.5 0 0 0</pose>
+        </include>
+
+        <include>
+            <uri>model://box_obstacle</uri>
+            <name>box_obstacle_04</name>
+            <pose>3.5 -3.5 0.5 0 0 0</pose>
+        </include>
+
+        <include>
+            <uri>model://box_obstacle</uri>
+            <name>box_obstacle_05</name>
+            <pose>-2 0 0.5 0 0 0</pose>
+        </include>
+
     </world>
 </sdf>
