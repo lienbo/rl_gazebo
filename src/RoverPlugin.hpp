@@ -3,6 +3,7 @@
 // Laboratorio de robotica movel
 // January 2017
 
+#include <gazebo/transport/transport.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/sensors/sensors.hh>
 #include <gazebo/common/common.hh>
@@ -23,6 +24,7 @@ namespace gazebo{
         std::vector<float> getState();
         void printState( const std::vector<float> &observed_state );
 
+        transport::PublisherPtr serverControlPub;
         sensors::CameraSensorPtr cameraPtr;
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;
@@ -31,7 +33,7 @@ namespace gazebo{
         common::Timer actionTimer;
         common::Time actionInterval;
         math::Vector3 setPoint;
-        unsigned numStates;
+        unsigned numStates, maxSteps, numSteps;
     };
     GZ_REGISTER_MODEL_PLUGIN(RoverPlugin)
 }

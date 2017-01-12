@@ -1,3 +1,4 @@
+#include <gazebo/msgs/server_control.pb.h>
 #include <boost/make_shared.hpp>
 #include <boost/filesystem.hpp>
 #include "RoverPlugin.hpp"
@@ -6,7 +7,7 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numStates(0)
+RoverPlugin::RoverPlugin() : numStates(0), numSteps(0)
 {
     actionTimer.Reset();
     actionInterval.Set(1,0);
@@ -16,13 +17,15 @@ RoverPlugin::RoverPlugin() : numStates(0)
     boost::filesystem::create_directory(dir);
 }
 
-RoverPlugin::~RoverPlugin()
-{
-    rlAgent->savePolicy();
-}
+RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
+    maxSteps = 25;
+    transport::NodePtr node( new transport::Node() );
+    node->Init();
+    serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
+
     const unsigned num_actions = 6;
     rlAgent = boost::make_shared<QLearner>( num_actions );
     roverModel = boost::make_shared<RoverModel>(model, sdf);
@@ -86,6 +89,19 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
         const unsigned action = rlAgent->chooseAction( observed_state );
         roverModel->applyAction( action );
         gzmsg << "Applying action = " << action << endl;
+
+        ++numSteps;
+        // Terminate simulation after maxStep
+        if( numSteps == maxSteps){
+            rlAgent->savePolicy();
+
+            gzmsg << endl;
+            gzmsg << "Simulation reached max number of steps." << endl;
+            gzmsg << "Terminating simulation..." << endl;
+            msgs::ServerControl server_msg;
+            server_msg.set_stop(true);
+            serverControlPub->Publish(server_msg);
+        }
 
         actionTimer.Reset();
         actionTimer.Start();
