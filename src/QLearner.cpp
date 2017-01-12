@@ -54,7 +54,7 @@ const bool QLearner::isNewState( const vector<float> &observed_state )
         if( state_it->compareState( observed_state ) ){
             // Found state. Break loop
             break;
-	    }
+        }
     }
 
     // Iterator is equal to qlearnerStates.end() if no state was found
@@ -93,10 +93,8 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state )
 
 
 
-const unsigned QLearner::chooseAction( const vector<float> &observed_state, const bool &training )
+const unsigned QLearner::chooseAction( const unsigned &state_index, const bool &training )
 {
-    unsigned state_index = fetchState( observed_state );
-
     State &current_state = qlearnerStates[state_index];
     if( training ){
         // Bernoulli distribution to change action
@@ -115,9 +113,9 @@ const unsigned QLearner::chooseAction( const vector<float> &observed_state, cons
 
 
 // reward is related to the transition from last state to the current state
-void QLearner::updateQValues( const float& reward, const vector<float> &observed_state )
+void QLearner::updateQValues( const float& reward, const unsigned &state_index )
 {
-    const unsigned current_index = fetchState( observed_state );
+    const unsigned current_index = state_index;
     State &last_state = qlearnerStates[lastIndex];
 
     // This is a modified version of the usual QLearning algorithms.

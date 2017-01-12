@@ -27,8 +27,9 @@ class QLearner{
 
     typedef std::vector<State> StatesContainer;
     const bool isNewState( const std::vector<float> &observed_state );
-    const unsigned chooseAction( const std::vector<float> &observed_state, const bool &training = true );
-    void updateQValues( const float& reward, const std::vector<float> &observed_state );
+    const unsigned fetchState( const std::vector<float> &observed_state );
+    const unsigned chooseAction( const unsigned &state_index, const bool &training = true );
+    void updateQValues( const float& reward, const unsigned &state_index);
     void loadPolicy();
     void savePolicy();
 
@@ -41,8 +42,6 @@ class QLearner{
     std::bernoulli_distribution bernoulliDist;
     // There may be an infinity number of states, thus states must be stored in dynamic vectors
     StatesContainer qlearnerStates;
-
-    const unsigned fetchState( const std::vector<float> &observed_state );
 };
 
 #endif

@@ -44,13 +44,9 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 
     // Apply first action
     vector<float> observed_state = getState();
-    if( rlAgent->isNewState( observed_state ) ){
-        string image_name = "./images/" + to_string(numStates) + ".png";
-        cameraPtr->SaveFrame( image_name );
-        ++numStates;
-    }
-    const unsigned action = rlAgent->chooseAction( observed_state );
-    roverModel->applyAction(action);
+    const unsigned state_index = rlAgent->fetchState( observed_state );
+    const unsigned action = rlAgent->chooseAction( state_index );
+    roverModel->applyAction( action );
     gzmsg << "Applying action = " << action << endl;
 }
 
@@ -64,8 +60,9 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     if( collision ){
         gzmsg << "Collision detected !!!" << endl;
         const vector<float> observed_state = getState();
+        const unsigned state_index = rlAgent->fetchState( observed_state );
         const float bad_reward = -1000;
-        rlAgent->updateQValues( bad_reward, observed_state );
+        rlAgent->updateQValues( bad_reward, state_index );
         // Reset gazebo model to initial position
         gzmsg << "Reseting model to initial position." << endl;
         roverModel->resetModel();
@@ -75,18 +72,19 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     if( elapsedTime >= actionInterval ){
         const float reward = roverModel->getReward(setPoint);
         vector<float> observed_state = getState();
+        const unsigned state_index = rlAgent->fetchState( observed_state );
         if( rlAgent->isNewState( observed_state) ){
             string image_name = "./images/" + to_string(numStates) + ".png";
             cameraPtr->SaveFrame( image_name );
             ++numStates;
         }
-        rlAgent->updateQValues( reward, observed_state );
+        rlAgent->updateQValues( reward, state_index );
 
         // Terminal state
         if( reward > -0.2 )
             roverModel->resetModel();
 
-        const unsigned action = rlAgent->chooseAction( observed_state );
+        const unsigned action = rlAgent->chooseAction( state_index );
         roverModel->applyAction( action );
         gzmsg << "Applying action = " << action << endl;
 
