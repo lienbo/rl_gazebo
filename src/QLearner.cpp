@@ -47,21 +47,6 @@ QLearner::QLearner( const unsigned &num_actions ) : alpha(0.1), gamma(0.95), num
 QLearner::~QLearner() {}
 
 
-const bool QLearner::isNewState( const vector<float> &observed_state )
-{
-   StatesContainer::iterator state_it;
-    for(state_it = qlearnerStates.begin(); state_it != qlearnerStates.end(); ++state_it){
-        if( state_it->compareState( observed_state ) ){
-            // Found state. Break loop
-            break;
-        }
-    }
-
-    // Iterator is equal to qlearnerStates.end() if no state was found
-    return (state_it == qlearnerStates.end()) ? true : false;
-}
-
-
 const unsigned QLearner::fetchState( const vector<float> &observed_state )
 {
     StatesContainer::iterator state_it;

@@ -25,7 +25,6 @@ namespace gazebo{
         void printState( const std::vector<float> &observed_state );
 
         transport::PublisherPtr serverControlPub;
-        sensors::CameraSensorPtr cameraPtr;
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;
         boost::shared_ptr<QLearner> rlAgent;
@@ -33,7 +32,7 @@ namespace gazebo{
         common::Timer actionTimer;
         common::Time actionInterval;
         math::Vector3 setPoint;
-        unsigned numStates, maxSteps, numSteps;
+        unsigned maxSteps, numSteps;
     };
     GZ_REGISTER_MODEL_PLUGIN(RoverPlugin)
 }

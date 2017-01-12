@@ -30,10 +30,12 @@ namespace gazebo{
         const math::Quaternion getOrientationState() const;
         const int getVelocityState() const;
         const int getSteeringState() const;
+        void saveImage( const unsigned &state_index ) const;
 
         private:
         void loadParameters();
         void initializeContacts();
+        void initializeCamera();
         void checkParameterName( const std::string &parameter_name );
 
         sdf::ElementPtr sdfFile;
@@ -41,6 +43,8 @@ namespace gazebo{
         physics::ModelPtr modelPtr;
         physics::JointPtr frontLeftJoint, frontRightJoint;
         physics::JointPtr rearLeftJoint, rearRightJoint;
+
+        sensors::CameraSensorPtr cameraPtr;
 
         typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
         ContactContainer contactPtrs;

@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include "RoverModel.hpp"
 
 using namespace std;
@@ -11,6 +12,7 @@ RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf) :
     sdfFile = sdf;
     loadParameters();
     initializeContacts();
+    initializeCamera();
 }
 
 
@@ -261,4 +263,22 @@ void RoverModel::resetModel()
     modelPtr->Reset();
     velocityState = 0;
     steeringState = 0;
+}
+
+
+void RoverModel::initializeCamera()
+{
+    // Create images output directory
+    boost::filesystem::path dir( "./images/" );
+    boost::filesystem::create_directory(dir);
+
+    cameraPtr = dynamic_pointer_cast<sensors::CameraSensor>(sensors::get_sensor("camera_sensor"));
+    cameraPtr->SetActive(true);
+}
+
+
+void RoverModel::saveImage( const unsigned &state_index ) const
+{
+    string image_name = "./images/" + to_string(state_index) + ".png";
+    cameraPtr->SaveFrame( image_name );
 }
