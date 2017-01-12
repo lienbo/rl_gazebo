@@ -72,6 +72,11 @@
                     </box>
                 </geometry>
             </visual>
+            <sensor name="contact_sensor_chassis" type="contact">
+                <contact>
+                    <collision>chassis_collision</collision>
+                </contact>
+            </sensor>
         </link>
 
 
@@ -104,6 +109,11 @@
                     </cylinder>
                 </geometry>
             </visual>
+            <sensor name="contact_sensor_rlw" type="contact">
+                <contact>
+                    <collision>rear_left_wheel_collision</collision>
+                </contact>
+            </sensor>
         </link>
 
         <joint type="revolute" name="rear_left_joint">
@@ -144,6 +154,11 @@
                     </cylinder>
                 </geometry>
             </visual>
+            <sensor name="contact_sensor_rrw" type="contact">
+                <contact>
+                    <collision>rear_right_wheel_collision</collision>
+                </contact>
+            </sensor>
         </link>
 
         <joint type="revolute" name="rear_right_joint">
@@ -184,6 +199,11 @@
                     </cylinder>
                 </geometry>
             </visual>
+            <sensor name="contact_sensor_flw" type="contact">
+                <contact>
+                    <collision>front_left_wheel_collision</collision>
+                </contact>
+            </sensor>
         </link>
 
         <link name="front_left_connector">
@@ -236,6 +256,11 @@
                     </cylinder>
                 </geometry>
             </visual>
+            <sensor name="contact_sensor_frw" type="contact">
+                <contact>
+                    <collision>front_right_wheel_collision</collision>
+                </contact>
+            </sensor>
         </link>
 
         <link name="front_right_connector">
