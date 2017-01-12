@@ -10,6 +10,7 @@ RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf) :
     modelPtr = model;
     sdfFile = sdf;
     loadParameters();
+    initializeContacts();
 }
 
 
@@ -205,4 +206,58 @@ const int RoverModel::getSteeringState() const
 {
     const int steering_state = steeringState;
     return steering_state;
+}
+
+
+void RoverModel::initializeContacts( )
+{
+    sensors::ContactSensorPtr contactPtr = dynamic_pointer_cast<sensors::ContactSensor>(sensors::get_sensor("contact_sensor_chassis"));
+    contactPtrs.push_back( contactPtr );
+
+    contactPtr = dynamic_pointer_cast<sensors::ContactSensor>(sensors::get_sensor("contact_sensor_rlw"));
+    contactPtrs.push_back( contactPtr );
+
+    contactPtr = dynamic_pointer_cast<sensors::ContactSensor>(sensors::get_sensor("contact_sensor_rrw"));
+    contactPtrs.push_back( contactPtr );
+
+    contactPtr = dynamic_pointer_cast<sensors::ContactSensor>(sensors::get_sensor("contact_sensor_flw"));
+    contactPtrs.push_back( contactPtr );
+
+    contactPtr = dynamic_pointer_cast<sensors::ContactSensor>(sensors::get_sensor("contact_sensor_frw"));
+    contactPtrs.push_back( contactPtr );
+
+    for(ContactContainer::iterator it = contactPtrs.begin();
+           it != contactPtrs.end(); ++it){
+        (*it)->SetActive(true);
+    }
+}
+
+
+bool RoverModel::checkCollision()
+{
+    bool collision = false;
+    msgs::Contacts contact_msgs;
+    for(ContactContainer::iterator it = contactPtrs.begin();
+            it != contactPtrs.end(); ++it){
+        contact_msgs = (*it)->Contacts();
+        for (unsigned int i = 0; i < contact_msgs.contact_size(); ++i){
+            string contact_str_01 = contact_msgs.contact(i).collision1();
+            string contact_str_02 = contact_msgs.contact(i).collision2();
+
+            if(( contact_str_01.find("box_obstacle") != string::npos )||( contact_str_01.find("walls") != string::npos ))
+                collision = true;
+
+            if(( contact_str_02.find("box_obstacle") != string::npos )||( contact_str_02.find("walls") != string::npos ))
+                collision = true;
+        }
+    }
+
+    return collision;
+}
+
+
+void RoverModel::resetModel() const
+{
+    modelPtr->ResetPhysicsStates();
+    modelPtr->Reset();
 }

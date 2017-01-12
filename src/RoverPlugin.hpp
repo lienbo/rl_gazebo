@@ -4,8 +4,8 @@
 // January 2017
 
 #include <gazebo/physics/physics.hh>
-#include <gazebo/common/common.hh>
 #include <gazebo/sensors/sensors.hh>
+#include <gazebo/common/common.hh>
 
 #include "RoverModel.hpp"
 #include "QLearner.hpp"

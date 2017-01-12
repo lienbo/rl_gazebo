@@ -7,6 +7,7 @@
 // January 2017
 
 #include <gazebo/physics/physics.hh>
+#include <gazebo/sensors/sensors.hh>
 #include <gazebo/common/common.hh>
 
 
@@ -19,6 +20,9 @@ namespace gazebo{
         void velocityController() const;
         void steeringWheelController();
 
+        bool checkCollision();
+        void resetModel() const;
+
         void applyAction(const int &action);
         const float getReward( math::Vector3 setpoint ) const;
         const math::Vector3 getDistanceState( math::Vector3 setpoint ) const;
@@ -29,6 +33,7 @@ namespace gazebo{
 
         private:
         void loadParameters();
+        void initializeContacts();
         void checkParameterName( const std::string &parameter_name );
 
         sdf::ElementPtr sdfFile;
@@ -36,6 +41,9 @@ namespace gazebo{
         physics::ModelPtr modelPtr;
         physics::JointPtr frontLeftJoint, frontRightJoint;
         physics::JointPtr rearLeftJoint, rearRightJoint;
+
+        typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
+        ContactContainer contactPtrs;
 
         // Angles are in radians. Positive is counterclockwise
         int steeringState;
