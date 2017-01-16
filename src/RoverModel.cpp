@@ -1,5 +1,6 @@
 #include <boost/filesystem.hpp>
 #include "RoverModel.hpp"
+#include <sstream>
 
 using namespace std;
 using namespace gazebo;
@@ -279,6 +280,7 @@ void RoverModel::initializeCamera()
 
 void RoverModel::saveImage( const unsigned &state_index ) const
 {
-    string image_name = "./images/" + to_string(state_index) + ".png";
-    cameraPtr->SaveFrame( image_name );
+    ostringstream image_name;
+    image_name << "./images/" << setfill('0') << setw(8) << state_index << ".png";
+    cameraPtr->SaveFrame( image_name.str() );
 }
