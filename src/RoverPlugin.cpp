@@ -6,7 +6,7 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numSteps(0)
+RoverPlugin::RoverPlugin() : numSteps(0), train(true)
 {
     actionTimer.Reset();
     actionInterval.Set(1,0);
@@ -48,7 +48,53 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
     roverModel->steeringWheelController();
+    train ? trainAlgorithm(): runAlgorithm();
+}
 
+
+vector<float> RoverPlugin::getState()
+{
+    vector<float> observed_state;
+
+    math::Vector3 distance = roverModel->getDistanceState( setPoint );
+    observed_state.push_back( distance.x );
+    observed_state.push_back( distance.y );
+    observed_state.push_back( distance.z );
+
+    math::Quaternion orientation = roverModel->getOrientationState();
+    observed_state.push_back( orientation.w );
+    observed_state.push_back( orientation.x );
+    observed_state.push_back( orientation.y );
+    observed_state.push_back( orientation.z );
+
+    const int velocity = roverModel->getVelocityState();
+    observed_state.push_back( velocity );
+
+    const int steering = roverModel->getSteeringState();
+    observed_state.push_back( steering );
+
+    printState( observed_state );
+
+    return observed_state;
+}
+
+
+void RoverPlugin::printState( const vector<float> &observed_state )
+{
+    vector<float>::const_iterator it;
+    gzmsg << endl;
+    stringstream stream;
+    stream << "State = ( ";
+    for(it = observed_state.begin(); it != observed_state.end(); ++it)
+        stream << setprecision(2) << *it << " ";
+    stream << ")";
+
+    gzmsg << stream.str() << endl;
+}
+
+
+void RoverPlugin::trainAlgorithm()
+{
     bool collision = roverModel->checkCollision();
     if( collision ){
         gzmsg << "Collision detected !!!" << endl;
@@ -93,43 +139,28 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     }
 }
 
-
-vector<float> RoverPlugin::getState()
+void RoverPlugin::runAlgorithm()
 {
-    vector<float> observed_state;
+    common::Time elapsedTime = actionTimer.GetElapsed();
+    if( elapsedTime >= actionInterval ){
+        vector<float> observed_state = getState();
+        const unsigned state_index = rlAgent->fetchState( observed_state );
+        const unsigned action = rlAgent->chooseAction( state_index, false );
+        roverModel->applyAction( action );
+        gzmsg << "Applying action = " << action << endl;
 
-    math::Vector3 distance = roverModel->getDistanceState( setPoint );
-    observed_state.push_back( distance.x );
-    observed_state.push_back( distance.y );
-    observed_state.push_back( distance.z );
+        ++numSteps;
+        // Terminate simulation after maxStep
+        if( numSteps == maxSteps){
+            gzmsg << endl;
+            gzmsg << "Simulation reached max number of steps." << endl;
+            gzmsg << "Terminating simulation..." << endl;
+            msgs::ServerControl server_msg;
+            server_msg.set_stop(true);
+            serverControlPub->Publish(server_msg);
+        }
 
-    math::Quaternion orientation = roverModel->getOrientationState();
-    observed_state.push_back( orientation.w );
-    observed_state.push_back( orientation.x );
-    observed_state.push_back( orientation.y );
-    observed_state.push_back( orientation.z );
-
-    const int velocity = roverModel->getVelocityState();
-    observed_state.push_back( velocity );
-
-    const int steering = roverModel->getSteeringState();
-    observed_state.push_back( steering );
-
-    printState( observed_state );
-
-    return observed_state;
-}
-
-
-void RoverPlugin::printState( const vector<float> &observed_state )
-{
-    vector<float>::const_iterator it;
-    gzmsg << endl;
-    stringstream stream;
-    stream << "State = ( ";
-    for(it = observed_state.begin(); it != observed_state.end(); ++it)
-        stream << setprecision(2) << *it << " ";
-    stream << ")";
-
-    gzmsg << stream.str() << endl;
+        actionTimer.Reset();
+        actionTimer.Start();
+    }
 }
