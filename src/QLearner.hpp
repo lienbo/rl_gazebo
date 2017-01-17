@@ -29,6 +29,7 @@ class QLearner{
     const unsigned fetchState( const std::vector<float> &observed_state );
     const unsigned chooseAction( const unsigned &state_index, const bool &training = true );
     void updateQValues( const float& reward, const unsigned &state_index);
+    void updateQValues( const float& reward );
     void loadPolicy();
     void savePolicy();
 

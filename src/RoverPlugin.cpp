@@ -52,10 +52,8 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
     bool collision = roverModel->checkCollision();
     if( collision ){
         gzmsg << "Collision detected !!!" << endl;
-        const vector<float> observed_state = getState();
-        const unsigned state_index = rlAgent->fetchState( observed_state );
         const float bad_reward = -1000;
-        rlAgent->updateQValues( bad_reward, state_index );
+        rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
         gzmsg << "Reseting model to initial position." << endl;
         roverModel->resetModel();
@@ -63,7 +61,7 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 
     common::Time elapsedTime = actionTimer.GetElapsed();
     if( elapsedTime >= actionInterval ){
-        const float reward = roverModel->getReward(setPoint);
+        const float reward = roverModel->getReward( setPoint );
         vector<float> observed_state = getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
         roverModel->saveImage( state_index );

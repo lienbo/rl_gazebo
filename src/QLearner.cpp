@@ -110,15 +110,26 @@ void QLearner::updateQValues( const float& reward, const unsigned &state_index )
 }
 
 
+void QLearner::updateQValues( const float& reward )
+{
+    State &last_state = qlearnerStates[lastIndex];
+
+    // This is a modified version of the usual QLearning algorithms.
+    // This updates the last QValues state instead of the current one.
+    // lastAction points to the qvalue associated with the last action.
+    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * ( -10 ) - (last_state.QValue) );
+}
+
+
 void QLearner::savePolicy()
 {
     // Save a NEW files with qvalues and state.
     // Old files are lost
-    boost::filesystem::path dir( "./policy/" );
+    boost::filesystem::path dir( "./output/policy/" );
     boost::filesystem::create_directory(dir);
 
-    string state_file_name("./policy/qlearner_states.txt");
-    string policy_file_name("./policy/qlearner_policy.txt");
+    string state_file_name("./output/policy/qlearner_states.txt");
+    string policy_file_name("./output/policy/qlearner_policy.txt");
     ofstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::out );
     state_file.open( state_file_name.c_str(), ios::out );
@@ -143,8 +154,8 @@ void QLearner::loadPolicy()
 {
     qlearnerStates.clear();
 
-    string state_file_name("./policy/qlearner_states.txt");
-    string policy_file_name("./policy/qlearner_policy.txt");
+    string state_file_name("./output/policy/qlearner_states.txt");
+    string policy_file_name("./output/policy/qlearner_policy.txt");
     ifstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::in );
     state_file.open( state_file_name.c_str(), ios::in );
