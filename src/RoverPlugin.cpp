@@ -26,6 +26,12 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     rlAgent = boost::make_shared<QLearner>( num_actions );
     roverModel = boost::make_shared<RoverModel>(model, sdf);
 
+    if( sdf->HasElement( "train" ) )
+        train = sdf->Get<bool>("train");
+
+    if( sdf->HasElement( "max_steps" ) )
+        maxSteps = sdf->Get<unsigned>("max_steps");
+
     rlAgent->loadPolicy();
 
     // onUpdate is called each simulation step.
