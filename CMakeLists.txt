@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(CarinaPlugin)
 
+if( !$ENV{CAFFE_ROOT} )
+    message(FATAL_ERROR "CAFFE_ROOT environment variable not set.")
+    message(FATAL_ERROR "CAFFE_ROOT must point to caffe directory.")
+endif()
 
 find_package(gazebo REQUIRED)
 include_directories( ${GAZEBO_INCLUDE_DIRS} )
@@ -42,3 +46,14 @@ if( COMPILE_ROS_PLUGIN )
     install(TARGETS RosRoverPlugin
         LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 endif()
+
+# Compile caffe plugin
+find_package(CUDA REQUIRED)
+include_directories( ${CUDA_INCLUDE_DIRS} )
+
+include_directories( $ENV{CAFFE_ROOT}/include )
+include_directories( $ENV{CAFFE_ROOT}/build/include )
+link_directories( $ENV{CAFFE_ROOT}/build/lib )
+
+add_library( DRLPlugin SHARED src/CaffeInference.cpp )
+target_link_libraries( DRLPlugin caffe )
