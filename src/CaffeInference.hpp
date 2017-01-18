@@ -9,8 +9,8 @@
 class CaffeInference{
     public:
     CaffeInference( const std::string &model_file,
-                   const std::string &trained_file,
-                   const std::string &mean_file );
+                   const std::string &trained_file );
+    void printInfo() const;
 
     private:
     boost::shared_ptr<caffe::Net<float> > caffeNet;
