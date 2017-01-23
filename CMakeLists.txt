@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-project(CarinaPlugin)
+project(DRLPlugin)
 
 if( !$ENV{CAFFE_ROOT} )
     message(FATAL_ERROR "CAFFE_ROOT environment variable not set.")
@@ -11,7 +11,7 @@ include_directories( ${GAZEBO_INCLUDE_DIRS} )
 link_directories( ${GAZEBO_LIBRARY_DIRS} )
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 link_directories( ${Boost_LIBRARY_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
@@ -32,6 +32,7 @@ install(DIRECTORY models/
     DESTINATION $ENV{HOME}/.gazebo/models)
 
 
+### Optional - Compile and install ROS plugin
 if( COMPILE_ROS_PLUGIN )
     find_package(catkin COMPONENTS
         roscpp
@@ -47,7 +48,11 @@ if( COMPILE_ROS_PLUGIN )
         LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 endif()
 
-# Compile caffe plugin
+
+### Compile and install deep reinforcement learning plugin
+find_package( OpenCV REQUIRED )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
 find_package(CUDA REQUIRED)
 include_directories( ${CUDA_INCLUDE_DIRS} )
 
@@ -56,4 +61,4 @@ include_directories( $ENV{CAFFE_ROOT}/build/include )
 link_directories( $ENV{CAFFE_ROOT}/build/lib )
 
 add_library( DRLPlugin SHARED src/CaffeInference.cpp )
-target_link_libraries( DRLPlugin caffe )
+target_link_libraries( DRLPlugin caffe ${Boost_LIBRARIES} glog protobuf hdf5 ${OpenCV_LIBRARIES} )

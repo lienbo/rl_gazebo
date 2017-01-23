@@ -1,14 +1,56 @@
-name: "LeNet"
+name: "DRLGazebo"
 
 layer {
-  name: "rl_gazebo_images"
-  type: "Data"
-  top: "data"
+  name: "drl_gazebo_images"
+  type: "Input"
+  top: "images"
+  include { 
+    phase: TEST
+  }
+  input_param{
+    shape{
+      dim: 1
+      dim: 3
+      dim: 240
+      dim: 240
+    }
+  }
   transform_param {
     scale: 0.00390625
     mirror: true
     crop_size: 240
-    mean_file: "./caffe/dataset/rl_gazebo_mean.binaryproto"
+    mean_file: "./caffe/dataset/drl_gazebo_mean.binaryproto"
+  }
+}
+
+layer {
+  name: "drl_gazebo_states"
+  type: "Input"
+  top: "states"
+  input_param{
+    shape{
+      dim: 1
+      dim: 9
+    }
+  }
+  include { 
+    phase: TEST
+  }
+}
+
+
+layer {
+  name: "drl_gazebo_images"
+  type: "Data"
+  top: "images"
+  include { 
+    phase: TRAIN
+  }
+  transform_param {
+    scale: 0.00390625
+    mirror: true
+    crop_size: 240
+    mean_file: "./caffe/dataset/drl_gazebo_mean.binaryproto"
   }
   data_param {
     source: "./caffe/dataset/train_lmdb"
@@ -18,9 +60,25 @@ layer {
 }
 
 layer {
-  name: "rl_gazebo_label"
+  name: "drl_gazebo_states"
   type: "HDF5Data"
-  top: "label"
+  top: "states"
+  include { 
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "./caffe/dataset/train_states.txt"
+    batch_size: 64
+  }
+}
+
+layer {
+  name: "drl_gazebo_policy"
+  type: "HDF5Data"
+  top: "policy"
+  include { 
+    phase: TRAIN
+  }
   hdf5_data_param {
     source: "./caffe/dataset/train_policy.txt"
     batch_size: 64
@@ -28,20 +86,9 @@ layer {
 }
 
 layer {
-  name: "rl_gazebo_states"
-  type: "HDF5Data"
-  top: "states"
-  hdf5_data_param {
-    source: "./caffe/dataset/train_states.txt"
-    batch_size: 64
-  }
-}
-
-
-layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "images"
   top: "conv1"
   param {
     lr_mult: 1
@@ -212,15 +259,18 @@ layer{
   name: "concat"
   bottom: "ip2"
   bottom: "states"
-  top: "concat_input"
+  top: "concat_output"
   type: "Concat"
+  concat_param {
+    axis: 1
+  }
 }
 
 
 layer {
   name: "ip3"
   type: "InnerProduct"
-  bottom: "concat_input"
+  bottom: "concat_output"
   top: "ip3"
   param {
     lr_mult: 1
@@ -250,7 +300,7 @@ layer {
   name: "ip4"
   type: "InnerProduct"
   bottom: "ip3"
-  top: "ip4"
+  top: "output"
   param {
     lr_mult: 1
   }
@@ -271,7 +321,10 @@ layer {
 layer {
   name: "loss"
   type: "EuclideanLoss"
-  bottom: "ip4"
-  bottom: "label"
+  bottom: "output"
+  bottom: "policy"
   top: "loss"
+  include { 
+    phase: TRAIN
+  }
 }

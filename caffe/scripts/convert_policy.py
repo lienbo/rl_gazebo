@@ -26,7 +26,7 @@ print( 'Number of actions = ', num_actions )
 
 h5_filename = './caffe/dataset/train_policy.h5'
 with h5py.File( h5_filename, 'w' ) as h5_file:
-    h5_file['label'] = policy_array
+    h5_file['policy'] = policy_array
 
 with open('./caffe/dataset/train_policy.txt', 'w') as h5_txt:
     h5_txt.write( h5_filename )
