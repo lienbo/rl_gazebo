@@ -56,9 +56,8 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 find_package(CUDA REQUIRED)
 include_directories( ${CUDA_INCLUDE_DIRS} )
 
-include_directories( $ENV{CAFFE_ROOT}/include )
-include_directories( $ENV{CAFFE_ROOT}/build/include )
-link_directories( $ENV{CAFFE_ROOT}/build/lib )
+include_directories( $ENV{CAFFE_ROOT}/build/install/include )
+link_directories( $ENV{CAFFE_ROOT}/build/install/lib )
 
 add_library( DRLPlugin SHARED src/CaffeInference.cpp )
 target_link_libraries( DRLPlugin caffe ${Boost_LIBRARIES} glog protobuf hdf5 ${OpenCV_LIBRARIES} )
