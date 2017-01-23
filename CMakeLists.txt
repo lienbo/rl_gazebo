@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(DRLPlugin)
 
-if( !$ENV{CAFFE_ROOT} )
-    message(FATAL_ERROR "CAFFE_ROOT environment variable not set.")
-    message(FATAL_ERROR "CAFFE_ROOT must point to caffe directory.")
-endif()
 
 find_package(gazebo REQUIRED)
 include_directories( ${GAZEBO_INCLUDE_DIRS} )
@@ -56,8 +52,12 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 find_package(CUDA REQUIRED)
 include_directories( ${CUDA_INCLUDE_DIRS} )
 
-include_directories( $ENV{CAFFE_ROOT}/build/install/include )
-link_directories( $ENV{CAFFE_ROOT}/build/install/lib )
+include_directories( /usr/local/lib )
 
-add_library( DRLPlugin SHARED src/CaffeInference.cpp )
-target_link_libraries( DRLPlugin caffe ${Boost_LIBRARIES} glog protobuf hdf5 ${OpenCV_LIBRARIES} )
+add_library( DRLPlugin SHARED src/DRLPlugin.cpp src/CaffeInference.cpp src/RoverModel.cpp)
+target_link_libraries( DRLPlugin caffe ${Boost_LIBRARIES} glog protobuf hdf5 ${OpenCV_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+### Install plugin and models
+install(TARGETS DRLPlugin
+    LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
+

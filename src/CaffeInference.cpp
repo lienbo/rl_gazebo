@@ -176,36 +176,3 @@ void CaffeInference::Predict( cv::Mat input_image, const float *input_state )
 
     printOutput();
 }
-
-
-int main()
-{
-    const string model_file = "./caffe/network/drl_gazebo.prototxt";
-    const string trained_file = "./caffe/models/drl_gazebo_iter_10000.caffemodel";
-
-    CaffeInference drl( model_file, trained_file );
-
-//    const string mean_file = "./caffe/dataset/rl_gazebo_mean.binaryproto";
-//    drl.loadImageMean( mean_file );
-
-//    const string states_file = "./caffe/dataset/train_policy.h5";
-//    drl.loadHDF5( states_file, 6 );
-
-//    const string policy_file = "./caffe/dataset/train_states.h5";
-//    drl.loadHDF5( policy_file, 9 );
-
-
-    // Feed input image to network
-    cv::Mat input_image = cv::imread("00000001.png", CV_LOAD_IMAGE_COLOR );
-//    cv::Mat input_image = cv::imread("00019843.png", CV_LOAD_IMAGE_COLOR );
-    input_image.convertTo(input_image, CV_32FC3);
-
-    // Feed input state to network
-    const float input_state[] = {5, 0, 0, 10, 0, 0, 0, 0, 0};
-//    const float input_state[] = {10, -9, 0, 8, 0, 0, 5, 1, 3};
-
-
-    drl.Predict( input_image, input_state );
-
-    return 0;
-}
