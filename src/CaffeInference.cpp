@@ -141,9 +141,7 @@ void CaffeInference::loadHDF5( const string &file_name, unsigned max_dim )
 void CaffeInference::feedImage( const Mat &input_image )
 {
     // Crop image and remove mean
-
     boost::shared_ptr<Blob<float> > image_blob = caffeNet->blob_by_name( imageBlobName );
-    printBlobInfo( "image_blob", *image_blob );
 
 //    dataTransformer->Transform( input_image, image_blob.get() );
 
@@ -157,7 +155,6 @@ void CaffeInference::feedState( const float *input_state )
     const unsigned num_elements = sizeof( input_state ) / sizeof( input_state[0] );
 
     boost::shared_ptr<Blob<float> > state_blob = caffeNet->blob_by_name( stateBlobName );
-    printBlobInfo("state_blob", *state_blob);
 
     // Load state blob with data;
     float *states = state_blob->mutable_cpu_data();
@@ -167,12 +164,20 @@ void CaffeInference::feedState( const float *input_state )
 }
 
 
-void CaffeInference::Predict( cv::Mat input_image, const float *input_state )
+vector<float> CaffeInference::Predict( cv::Mat input_image, const float *input_state )
 {
     feedImage( input_image );
     feedState( input_state );
 
     caffeNet->Forward();
 
-    printOutput();
+    vector<float> output;
+    boost::shared_ptr<Blob<float> > output_blob = caffeNet->blob_by_name( outputBlobName );
+
+    const float *output_data = output_blob->cpu_data();
+    for(size_t i = 0; i < output_blob->shape(1); ++i){
+        output.push_back( output_data[i] );
+    }
+
+    return output;
 }

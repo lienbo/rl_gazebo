@@ -22,7 +22,7 @@ class CaffeInference{
 
     void loadHDF5( const std::string &file_name, unsigned max_dim );
     void loadImageMean( const std::string &mean_file );
-    void Predict( cv::Mat input_image, const float *input_state);
+    std::vector<float> Predict( cv::Mat input_image, const float *input_state);
 
     private:
     boost::shared_ptr<caffe::Net<float> > caffeNet;
