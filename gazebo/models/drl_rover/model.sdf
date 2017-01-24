@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <sdf version="1.4">
-    <model name="rover">
+    <model name="drl_rover">
         <static>false</static>
         <pose>0 0 .12 0 0 0</pose>
 
@@ -288,7 +288,7 @@
             </axis>
         </joint>
 
-        <plugin name="RoverPlugin" filename="libDRLPlugin.so">
+        <plugin name="DRLPlugin" filename="libDRLPlugin.so">
             <chassis_name>chassis</chassis_name>
             <front_left_joint>front_left_joint</front_left_joint>
             <front_right_joint>front_right_joint</front_right_joint>

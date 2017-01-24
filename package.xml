@@ -1,5 +1,5 @@
 <package>
-    <name>carina_plugin</name>
+    <name>drl_gazebo</name>
     <version>0.1.0</version>
     <description>Package to simulate an autonomous vehicle</description>
 

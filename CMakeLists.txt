@@ -24,7 +24,7 @@ target_link_libraries(RoverPlugin
 install(TARGETS RoverPlugin
     LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 
-install(DIRECTORY models/
+install(DIRECTORY gazebo/models/
     DESTINATION $ENV{HOME}/.gazebo/models)
 
 

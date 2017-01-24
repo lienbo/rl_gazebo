@@ -270,7 +270,7 @@ void RoverModel::resetModel()
 void RoverModel::initializeCamera()
 {
     // Create images output directory
-    boost::filesystem::path dir( "./output/images/" );
+    boost::filesystem::path dir( "./gazebo/output/images/" );
     boost::filesystem::create_directory(dir);
 
     cameraPtr = dynamic_pointer_cast<sensors::CameraSensor>(sensors::get_sensor("camera_sensor"));
@@ -281,7 +281,7 @@ void RoverModel::initializeCamera()
 void RoverModel::saveImage( const unsigned &state_index ) const
 {
     ostringstream image_name;
-    image_name << "./output/images/" << setfill('0') << setw(8) << state_index << ".png";
+    image_name << "./gazebo/output/images/" << setfill('0') << setw(8) << state_index << ".png";
     cameraPtr->SaveFrame( image_name.str() );
 }
 

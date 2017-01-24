@@ -1,4 +1,4 @@
-#include <gazebo/msgs/server_control.pb.h>
+
 #include <boost/make_shared.hpp>
 #include "RoverPlugin.hpp"
 
@@ -17,7 +17,7 @@ RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 25;
+    maxSteps = 20000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -69,8 +69,9 @@ vector<float> RoverPlugin::getState()
 
     math::Quaternion orientation = roverModel->getOrientationState();
     observed_state.push_back( orientation.w );
-    observed_state.push_back( orientation.x );
-    observed_state.push_back( orientation.y );
+    // In this dataset the robot wont change x and y
+//    observed_state.push_back( orientation.x );
+//    observed_state.push_back( orientation.y );
     observed_state.push_back( orientation.z );
 
     const int velocity = roverModel->getVelocityState();

@@ -125,11 +125,11 @@ void QLearner::savePolicy()
 {
     // Save a NEW files with qvalues and state.
     // Old files are lost
-    boost::filesystem::path dir( "./output/policy/" );
+    boost::filesystem::path dir( "./gazebo/output/policy/" );
     boost::filesystem::create_directory(dir);
 
-    string state_file_name("./output/policy/qlearner_states.txt");
-    string policy_file_name("./output/policy/qlearner_policy.txt");
+    string state_file_name("./gazebo/output/policy/qlearner_states.txt");
+    string policy_file_name("./gazebo/output/policy/qlearner_policy.txt");
     ofstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::out );
     state_file.open( state_file_name.c_str(), ios::out );
@@ -154,8 +154,8 @@ void QLearner::loadPolicy()
 {
     qlearnerStates.clear();
 
-    string state_file_name("./output/policy/qlearner_states.txt");
-    string policy_file_name("./output/policy/qlearner_policy.txt");
+    string state_file_name("./gazebo/output/policy/qlearner_states.txt");
+    string policy_file_name("./gazebo/output/policy/qlearner_policy.txt");
     ifstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::in );
     state_file.open( state_file_name.c_str(), ios::in );
