@@ -31,6 +31,9 @@ namespace gazebo{
         const int getVelocityState() const;
         const int getSteeringState() const;
         void saveImage( const unsigned &state_index ) const;
+        const unsigned char* getImage() const;
+        const unsigned getImageHeight() const;
+        const unsigned getImageWidth() const;
 
         private:
         void loadParameters();

@@ -284,3 +284,19 @@ void RoverModel::saveImage( const unsigned &state_index ) const
     image_name << "./output/images/" << setfill('0') << setw(8) << state_index << ".png";
     cameraPtr->SaveFrame( image_name.str() );
 }
+
+
+const unsigned char* RoverModel::getImage() const
+{
+    return cameraPtr->ImageData();
+}
+
+const unsigned RoverModel::getImageHeight() const
+{
+    return cameraPtr->ImageHeight();
+}
+
+const unsigned RoverModel::getImageWidth() const
+{
+    return cameraPtr->ImageWidth();
+}
