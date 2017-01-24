@@ -24,6 +24,12 @@ class CaffeInference{
     void loadImageMean( const std::string &mean_file );
     std::vector<float> Predict( cv::Mat input_image, const float *input_state);
 
+    void printOutput() const;
+    void printNetInfo() const;
+    void printImageInfo( const cv::Mat &image ) const;
+    void printBlobInfo( const std::string &blob_name, const caffe::Blob<float> &blob ) const;
+    void printBlobContent( const std::string &blob_name, caffe::Blob<float> &blob ) const;
+
     private:
     boost::shared_ptr<caffe::Net<float> > caffeNet;
     boost::shared_ptr<caffe::DataTransformer<float> > dataTransformer;
@@ -32,12 +38,6 @@ class CaffeInference{
 
     void feedImage( const cv::Mat &input_image );
     void feedState( const float *input_state );
-
-    void printOutput() const;
-    void printNetInfo() const;
-    void printImageInfo( const cv::Mat &image ) const;
-    void printBlobInfo( const std::string &blob_name, const caffe::Blob<float> &blob ) const;
-    void printBlobContent( const std::string &blob_name, caffe::Blob<float> &blob ) const;
 };
 
 #endif
