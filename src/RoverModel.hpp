@@ -52,6 +52,8 @@ namespace gazebo{
         typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
         ContactContainer contactPtrs;
 
+        const std::string outputDir;
+
         // Angles are in radians. Positive is counterclockwise
         int steeringState;
         int velocityState;

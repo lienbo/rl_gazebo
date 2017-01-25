@@ -40,6 +40,8 @@ class QLearner{
     std::default_random_engine generator;
     std::uniform_int_distribution<int> uniformDist;
     std::bernoulli_distribution bernoulliDist;
+    std::string outputDir;
+
     // There may be an infinity number of states, thus states must be stored in dynamic vectors
     StatesContainer qlearnerStates;
 };

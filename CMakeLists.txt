@@ -7,7 +7,7 @@ include_directories( ${GAZEBO_INCLUDE_DIRS} )
 link_directories( ${GAZEBO_LIBRARY_DIRS} )
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system filesystem )
 link_directories( ${Boost_LIBRARY_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
 
@@ -60,4 +60,3 @@ target_link_libraries( DRLPlugin caffe ${Boost_LIBRARIES} glog protobuf hdf5 ${O
 ### Install plugin and models
 install(TARGETS DRLPlugin
     LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
-

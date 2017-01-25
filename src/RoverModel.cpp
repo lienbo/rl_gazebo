@@ -7,7 +7,7 @@ using namespace gazebo;
 
 
 RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf) :
-        steeringState(0), velocityState(0)
+        steeringState(0), velocityState(0), outputDir("./gazebo/output/images/")
 {
     modelPtr = model;
     sdfFile = sdf;
@@ -270,8 +270,8 @@ void RoverModel::resetModel()
 void RoverModel::initializeCamera()
 {
     // Create images output directory
-    boost::filesystem::path dir( "./gazebo/output/images/" );
-    boost::filesystem::create_directory(dir);
+    boost::filesystem::path dir( outputDir.c_str() );
+    boost::filesystem::create_directories( dir );
 
     cameraPtr = dynamic_pointer_cast<sensors::CameraSensor>(sensors::get_sensor("camera_sensor"));
     cameraPtr->SetActive(true);
@@ -281,7 +281,7 @@ void RoverModel::initializeCamera()
 void RoverModel::saveImage( const unsigned &state_index ) const
 {
     ostringstream image_name;
-    image_name << "./gazebo/output/images/" << setfill('0') << setw(8) << state_index << ".png";
+    image_name << outputDir.c_str() << setfill('0') << setw(8) << state_index << ".png";
     cameraPtr->SaveFrame( image_name.str() );
 }
 
