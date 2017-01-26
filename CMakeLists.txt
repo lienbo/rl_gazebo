@@ -46,16 +46,17 @@ endif()
 
 
 ### Compile and install deep reinforcement learning plugin
+find_package( Caffe REQUIRED )
+include_directories( ${Caffe_INCLUDE_DIRS} )
+
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-find_package(CUDA REQUIRED)
-include_directories( ${CUDA_INCLUDE_DIRS} )
-
-include_directories( /usr/local/lib )
+pkg_check_modules( hdf5 REQUIRED )
+include_directories( ${hdf5_INCLUDE_DIRS} )
 
 add_library( DRLPlugin SHARED src/DRLPlugin.cpp src/CaffeInference.cpp src/RoverModel.cpp)
-target_link_libraries( DRLPlugin caffe ${Boost_LIBRARIES} glog protobuf hdf5 ${OpenCV_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries( DRLPlugin ${Caffe_LIBRARIES} ${Boost_LIBRARIES} glog protobuf ${hdf5_LIBRARIES} ${OpenCV_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 ### Install plugin and models
 install(TARGETS DRLPlugin
