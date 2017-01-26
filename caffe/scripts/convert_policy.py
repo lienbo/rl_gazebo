@@ -5,7 +5,7 @@ import h5py
 import os
 
 
-policy_file = open('./output/policy/qlearner_policy.txt')
+policy_file = open('./gazebo/output/policy/qlearner_policy.txt')
 
 policy = []
 for line in policy_file:
@@ -34,7 +34,7 @@ with open('./caffe/dataset/train_policy.txt', 'w') as h5_txt:
 
 
 
-states_file = open('./output/policy/qlearner_states.txt')
+states_file = open('./gazebo/output/policy/qlearner_states.txt')
 
 states = []
 for line in states_file:

@@ -11,7 +11,7 @@ using namespace std;
 using namespace gazebo;
 
 
-DRLPlugin::DRLPlugin() : numSteps(0)
+DRLPlugin::DRLPlugin() : numSteps(0), trainNet(true)
 {
     actionTimer.Reset();
     actionInterval.Set(1,0);
@@ -22,17 +22,21 @@ DRLPlugin::~DRLPlugin() {}
 
 void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 20000;
+    maxSteps = 1000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
 
     const unsigned num_actions = 6;
+    rlAgent = boost::make_shared<QLearner>( num_actions );
     roverModel = boost::make_shared<RoverModel>( model, sdf );
 
     const string model_file = "./caffe/network/drl_gazebo.prototxt";
-    const string trained_file = "./caffe/models/drl_gazebo_iter_10000.caffemodel";
+    const string trained_file = "./caffe/models/drl_gazebo_iter_500.caffemodel";
     caffeNet = boost::make_shared<CaffeInference>( model_file, trained_file );
+
+    if( sdf->HasElement( "train" ) )
+        trainNet = sdf->Get<bool>("train");
 
     if( sdf->HasElement( "max_steps" ) )
         maxSteps = sdf->Get<unsigned>("max_steps");
@@ -43,7 +47,13 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
         boost::bind(&DRLPlugin::onUpdate, this, _1));
 
     actionTimer.Start();
-    const unsigned action = 0;
+
+    // Apply first action
+    vector<float> observed_state = getState();
+    const unsigned state_index = rlAgent->fetchState( observed_state );
+    const unsigned action = rlAgent->chooseAction( state_index, true );
+    roverModel->applyAction( action );
+    gzmsg << "Applying action = " << action << endl;
 }
 
 
@@ -51,7 +61,7 @@ void DRLPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
     roverModel->steeringWheelController();
-    runAlgorithm();
+    trainNet ? trainAlgorithm(): runAlgorithm();
 }
 
 
@@ -66,8 +76,8 @@ vector<float> DRLPlugin::getState()
 
     math::Quaternion orientation = roverModel->getOrientationState();
     observed_state.push_back( orientation.w );
-    observed_state.push_back( orientation.x );
-    observed_state.push_back( orientation.y );
+//    observed_state.push_back( orientation.x );
+//    observed_state.push_back( orientation.y );
     observed_state.push_back( orientation.z );
 
     const int velocity = roverModel->getVelocityState();
@@ -85,7 +95,6 @@ vector<float> DRLPlugin::getState()
 void DRLPlugin::printState( const vector<float> &observed_state )
 {
     vector<float>::const_iterator it;
-    gzmsg << endl;
     stringstream stream;
     stream << "State = ( ";
     for(it = observed_state.begin(); it != observed_state.end(); ++it)
@@ -93,6 +102,72 @@ void DRLPlugin::printState( const vector<float> &observed_state )
     stream << ")";
 
     gzmsg << stream.str() << endl;
+}
+
+
+void DRLPlugin::trainAlgorithm()
+{
+    bool collision = roverModel->checkCollision();
+    if( collision ){
+        gzmsg << "Collision detected !!!" << endl;
+        const float bad_reward = -1000;
+        rlAgent->updateQValues( bad_reward );
+        // Reset gazebo model to initial position
+        gzmsg << "Reseting model to initial position." << endl;
+        roverModel->resetModel();
+    }
+
+    common::Time elapsedTime = actionTimer.GetElapsed();
+    if( elapsedTime >= actionInterval ){
+
+        gzmsg << endl;
+        gzmsg << "Step = " << numSteps << endl;
+        unsigned char* image_data = const_cast<unsigned char*>(roverModel->getImage());
+        if( image_data ){
+            cv::Mat input_image = cv::Mat( roverModel->getImageHeight(),
+                                           roverModel->getImageWidth(),
+                                           CV_8UC3,
+                                           image_data );
+
+            input_image.convertTo(input_image, CV_32FC3);
+
+            // Feed input state to network
+            vector<float> observed_state = getState();
+            const float *input_state = &observed_state[0];
+
+            vector<float> qvalues = caffeNet->Predict( input_image, input_state );
+
+            const float reward = roverModel->getReward( setPoint );
+            const unsigned state_index = rlAgent->fetchState( observed_state, qvalues );
+
+            roverModel->saveImage( state_index );
+            rlAgent->updateQValues( reward, state_index );
+
+            // Terminal state
+            if( reward > -0.2 )
+                roverModel->resetModel();
+
+            const unsigned action = rlAgent->chooseAction( state_index, true );
+            roverModel->applyAction( action );
+            gzmsg << "Applying action = " << action << endl;
+        }
+
+        ++numSteps;
+        // Terminate simulation after maxStep
+        if( numSteps == maxSteps){
+            rlAgent->savePolicy();
+
+            gzmsg << endl;
+            gzmsg << "Simulation reached max number of steps." << endl;
+            gzmsg << "Terminating simulation..." << endl;
+            msgs::ServerControl server_msg;
+            server_msg.set_stop(true);
+            serverControlPub->Publish(server_msg);
+        }
+
+        actionTimer.Reset();
+        actionTimer.Start();
+    }
 }
 
 
@@ -115,9 +190,9 @@ void DRLPlugin::runAlgorithm()
             vector<float> observed_state = getState();
             const float *input_state = &observed_state[0];
 
-            vector<float> policy = caffeNet->Predict( input_image, input_state );
-            vector<float>::iterator policy_it = max_element( policy.begin(), policy.end() );
-            const unsigned action = distance( policy.begin(), policy_it );
+            vector<float> qvalues = caffeNet->Predict( input_image, input_state );
+            vector<float>::iterator qvalues_it = max_element( qvalues.begin(), qvalues.end() );
+            const unsigned action = distance( qvalues.begin(), qvalues_it );
 
             roverModel->applyAction( action );
             gzmsg << "Applying action = " << action << endl;

@@ -55,7 +55,7 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 pkg_check_modules( hdf5 REQUIRED )
 include_directories( ${hdf5_INCLUDE_DIRS} )
 
-add_library( DRLPlugin SHARED src/DRLPlugin.cpp src/CaffeInference.cpp src/RoverModel.cpp)
+add_library( DRLPlugin SHARED src/DRLPlugin.cpp src/CaffeInference.cpp src/RoverModel.cpp src/QLearner.cpp )
 target_link_libraries( DRLPlugin ${Caffe_LIBRARIES} ${Boost_LIBRARIES} glog protobuf ${hdf5_LIBRARIES} ${OpenCV_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 ### Install plugin and models

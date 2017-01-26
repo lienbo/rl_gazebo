@@ -10,6 +10,7 @@
 
 #include "CaffeInference.hpp"
 #include "RoverModel.hpp"
+#include "QLearner.hpp"
 
 
 namespace gazebo{
@@ -29,12 +30,14 @@ namespace gazebo{
         transport::PublisherPtr serverControlPub;
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;
+        boost::shared_ptr<QLearner> rlAgent;
         boost::shared_ptr<CaffeInference> caffeNet;
         // Counts the time between the action and its result
         common::Timer actionTimer;
         common::Time actionInterval;
         math::Vector3 setPoint;
         unsigned maxSteps, numSteps;
+        bool trainNet;
     };
     GZ_REGISTER_MODEL_PLUGIN(DRLPlugin)
 }

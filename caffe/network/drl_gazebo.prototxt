@@ -30,7 +30,7 @@ layer {
   input_param{
     shape{
       dim: 1
-      dim: 9
+      dim: 7
     }
   }
   include { 
