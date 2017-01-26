@@ -158,8 +158,8 @@ void QLearner::savePolicy()
     boost::filesystem::path dir( outputDir.c_str() );
     boost::filesystem::create_directories( dir );
 
-    string state_file_name = outputDir + "./gazebo/output/policy/qlearner_states.txt";
-    string policy_file_name = outputDir + "./gazebo/output/policy/qlearner_policy.txt";
+    string state_file_name = outputDir + "qlearner_states.txt";
+    string policy_file_name = outputDir + "qlearner_policy.txt";
     ofstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::out );
     state_file.open( state_file_name.c_str(), ios::out );
