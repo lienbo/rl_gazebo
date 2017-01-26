@@ -25,7 +25,10 @@ CaffeInference::CaffeInference( const string &model_file, const string &trained_
     Caffe::set_mode(Caffe::GPU);
 
     caffeNet.reset(new Net<float>( model_file, caffe::TEST ));
-    caffeNet->CopyTrainedLayersFrom(trained_file);
+    if( access( trained_file.c_str(), F_OK ) != -1  ){
+        cout << "Loading network weights..." << endl;
+        caffeNet->CopyTrainedLayersFrom(trained_file);
+    }
 
     printNetInfo();
 
