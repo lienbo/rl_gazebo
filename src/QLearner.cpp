@@ -77,6 +77,36 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state )
 }
 
 
+const unsigned QLearner::fetchState( const vector<float> &observed_state, const vector<float> &qvalues )
+{
+    StatesContainer::iterator state_it;
+    for(state_it = qlearnerStates.begin(); state_it != qlearnerStates.end(); ++state_it){
+        if( state_it->compareState( observed_state ) ){
+            // Found state. Break loop
+            break;
+	    }
+    }
+
+    // Iterator is equal to qlearnerStates.end() if no state was found
+    if( state_it == qlearnerStates.end() ){
+        State new_state( numActions, observed_state );
+        state_it = qlearnerStates.insert( state_it, new_state );
+    }
+
+    // The action is the iterator position.
+    // Never change the vector order (sort)
+    State &current_state = *state_it;
+    current_state.QValues = qvalues;
+
+    vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
+    current_state.action = distance( qvalues.begin(), action_it );
+    current_state.maxQValue = *action_it;
+    current_state.QValue = *action_it;
+
+    const unsigned state_index = distance( qlearnerStates.begin(), state_it );
+    return state_index;
+}
+
 
 const unsigned QLearner::chooseAction( const unsigned &state_index, const bool &training )
 {
