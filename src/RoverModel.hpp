@@ -35,6 +35,7 @@ namespace gazebo{
         const unsigned char* getImage() const;
         const unsigned getImageHeight() const;
         const unsigned getImageWidth() const;
+        const unsigned getNumActions() const;
 
         private:
         void loadParameters();

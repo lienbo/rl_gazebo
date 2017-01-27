@@ -34,8 +34,7 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     }
     roverModel = boost::make_shared<RoverModel>( model, sdf, destination_pos );
 
-    const unsigned num_actions = 6;
-    rlAgent = boost::make_shared<QLearner>( num_actions );
+    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
 
     const string model_file = "./caffe/network/drl_gazebo.prototxt";
     string weights_file = "./caffe/models/drl_gazebo_iter_10000.caffemodel";

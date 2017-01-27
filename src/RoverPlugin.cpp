@@ -30,8 +30,7 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     }
     roverModel = boost::make_shared<RoverModel>(model, sdf, destination_pos);
 
-    const unsigned num_actions = 6;
-    rlAgent = boost::make_shared<QLearner>( num_actions );
+    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
 
     if( sdf->HasElement( "train" ) )
         train = sdf->Get<bool>("train");
