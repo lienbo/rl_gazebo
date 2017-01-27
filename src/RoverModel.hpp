@@ -9,23 +9,24 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/sensors/sensors.hh>
 #include <gazebo/common/common.hh>
+#include <random>
 
 
 namespace gazebo{
     class RoverModel{
         public:
-        RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf);
+        RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 );
         ~RoverModel();
 
         void velocityController() const;
         void steeringWheelController();
 
         bool checkCollision();
-        void resetModel();
+        void resetModel( bool change_pose = false );
 
         void applyAction(const int &action);
-        const float getReward( math::Vector3 setpoint ) const;
-        const math::Vector3 getDistanceState( math::Vector3 setpoint ) const;
+        const float getReward() const;
+        const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;
         const math::Quaternion getOrientationState() const;
         const int getVelocityState() const;
@@ -53,6 +54,12 @@ namespace gazebo{
         ContactContainer contactPtrs;
 
         const std::string outputDir;
+
+        math::Vector3 setPoint;
+        std::vector<math::Pose> initialPos;
+        std::vector<math::Vector3> destinationPos;
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> uniformDist;
 
         // Angles are in radians. Positive is counterclockwise
         int steeringState;

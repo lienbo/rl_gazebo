@@ -15,25 +15,34 @@ DRLPlugin::DRLPlugin() : numSteps(0), trainNet(true)
 {
     actionTimer.Reset();
     actionInterval.Set(1,0);
-    setPoint.Set(2, 0, 0.1);
 }
 
 DRLPlugin::~DRLPlugin() {}
 
 void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 1000;
+    maxSteps = 10000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
 
+    math::Vector3 destination_pos(2, 0, 0.1);
+    if( sdf->HasElement( "destination" ) ){
+        destination_pos = sdf->Get<math::Vector3>("destination");
+        gzmsg << "Set destination to = ( " << \
+            destination_pos.x << ", " << destination_pos.y << ", " << destination_pos.z << " )"<< endl;
+    }
+    roverModel = boost::make_shared<RoverModel>( model, sdf, destination_pos );
+
     const unsigned num_actions = 6;
     rlAgent = boost::make_shared<QLearner>( num_actions );
-    roverModel = boost::make_shared<RoverModel>( model, sdf );
 
     const string model_file = "./caffe/network/drl_gazebo.prototxt";
-    const string trained_file = "./caffe/models/drl_gazebo_iter_500.caffemodel";
-    caffeNet = boost::make_shared<CaffeInference>( model_file, trained_file );
+    string weights_file = "./caffe/models/drl_gazebo_iter_10000.caffemodel";
+    if( sdf->HasElement( "weights_file" ) ){
+        weights_file = sdf->Get<string>("weights_file");
+    }
+    caffeNet = boost::make_shared<CaffeInference>( model_file, weights_file );
 
     if( sdf->HasElement( "train" ) )
         trainNet = sdf->Get<bool>("train");
@@ -69,7 +78,7 @@ vector<float> DRLPlugin::getState()
 {
     vector<float> observed_state;
 
-    math::Vector3 distance = roverModel->getDistanceState( setPoint );
+    math::Vector3 distance = roverModel->getDistanceState();
     observed_state.push_back( distance.x );
     observed_state.push_back( distance.y );
     observed_state.push_back( distance.z );
@@ -137,7 +146,7 @@ void DRLPlugin::trainAlgorithm()
 
             vector<float> qvalues = caffeNet->Predict( input_image, input_state );
 
-            const float reward = roverModel->getReward( setPoint );
+            const float reward = roverModel->getReward();
             const unsigned state_index = rlAgent->fetchState( observed_state, qvalues );
 
             roverModel->saveImage( state_index );

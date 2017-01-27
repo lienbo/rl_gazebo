@@ -10,7 +10,6 @@ RoverPlugin::RoverPlugin() : numSteps(0), train(true)
 {
     actionTimer.Reset();
     actionInterval.Set(1,0);
-    setPoint.Set(5, 0, 0.1);
 }
 
 RoverPlugin::~RoverPlugin() {}
@@ -22,9 +21,17 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
 
+
+    math::Vector3 destination_pos(2, 0, 0.1);
+    if( sdf->HasElement( "destination" ) ){
+        destination_pos = sdf->Get<math::Vector3>("destination");
+        gzmsg << "Set destination to = ( " << \
+            destination_pos.x << ", " << destination_pos.y << ", " << destination_pos.z << " )"<< endl;
+    }
+    roverModel = boost::make_shared<RoverModel>(model, sdf, destination_pos);
+
     const unsigned num_actions = 6;
     rlAgent = boost::make_shared<QLearner>( num_actions );
-    roverModel = boost::make_shared<RoverModel>(model, sdf);
 
     if( sdf->HasElement( "train" ) )
         train = sdf->Get<bool>("train");
@@ -62,7 +69,7 @@ vector<float> RoverPlugin::getState()
 {
     vector<float> observed_state;
 
-    math::Vector3 distance = roverModel->getDistanceState( setPoint );
+    math::Vector3 distance = roverModel->getDistanceState();
     observed_state.push_back( distance.x );
     observed_state.push_back( distance.y );
     observed_state.push_back( distance.z );
@@ -114,7 +121,7 @@ void RoverPlugin::trainAlgorithm()
 
     common::Time elapsedTime = actionTimer.GetElapsed();
     if( elapsedTime >= actionInterval ){
-        const float reward = roverModel->getReward( setPoint );
+        const float reward = roverModel->getReward();
         vector<float> observed_state = getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
         roverModel->saveImage( state_index );

@@ -33,7 +33,6 @@ namespace gazebo{
         // Counts the time between the action and its result
         common::Timer actionTimer;
         common::Time actionInterval;
-        math::Vector3 setPoint;
         unsigned maxSteps, numSteps;
         bool train;
     };

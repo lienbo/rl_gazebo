@@ -6,14 +6,24 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf) :
-        steeringState(0), velocityState(0), outputDir("./gazebo/output/images/")
+RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 destination_pos) :
+        steeringState(0), velocityState(0), outputDir("./gazebo/output/images/"), setPoint(destination_pos), uniformDist(0, 3)
 {
     modelPtr = model;
     sdfFile = sdf;
     loadParameters();
     initializeContacts();
     initializeCamera();
+
+    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(0, 4, .12, 0, 0, -1.5708) );
+    initialPos.push_back( math::Pose(-5.5, -3.3, .12, 0, 0, 1.5708) );
+    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 3.1416) );
+
+    destinationPos.push_back( math::Vector3(2, 0, 0.1) );
+    destinationPos.push_back( math::Vector3(-5, 0, 0.1) );
+    destinationPos.push_back( math::Vector3(-1.5, -3.5, 0.1) );
+    destinationPos.push_back( math::Vector3(6, 6, 0.1) );
 }
 
 
@@ -148,11 +158,11 @@ void RoverModel::steeringWheelController()
 }
 
 
-const float RoverModel::getReward( math::Vector3 setpoint ) const
+const float RoverModel::getReward() const
 {
     math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
-    float distance = abs_position.Distance( setpoint );
-//    reward = abs(setpoint - abs_position.x) > 0.01 ? -1 : 0;
+    float distance = abs_position.Distance( setPoint );
+//    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
     const float reward = - distance;
 
@@ -160,13 +170,13 @@ const float RoverModel::getReward( math::Vector3 setpoint ) const
 }
 
 
-const math::Vector3 RoverModel::getDistanceState( math::Vector3 setpoint ) const
+const math::Vector3 RoverModel::getDistanceState() const
 {
     const float grid_size = 0.2;
     math::Vector3 distance = modelPtr->GetWorldPose().pos;
-    distance.x = round(( setpoint.x - distance.x ) / grid_size);
-    distance.y = round(( setpoint.y - distance.y ) / grid_size);
-    distance.z = round(( setpoint.z - distance.z ) / grid_size);
+    distance.x = round(( setPoint.x - distance.x ) / grid_size);
+    distance.y = round(( setPoint.y - distance.y ) / grid_size);
+    distance.z = round(( setPoint.z - distance.z ) / grid_size);
 
     return distance;
 }
@@ -259,12 +269,23 @@ bool RoverModel::checkCollision()
 }
 
 
-void RoverModel::resetModel()
+void RoverModel::resetModel( bool change_pose )
 {
     modelPtr->Reset();
+
+    if( change_pose ){
+        const unsigned new_pose = uniformDist(generator);
+        modelPtr->SetWorldPose( initialPos[new_pose] );
+
+        const unsigned new_destination = uniformDist(generator);
+        setPoint = destinationPos[new_pose];
+    }
+
     velocityState = 0;
     steeringState = 0;
 }
+
+
 
 
 void RoverModel::initializeCamera()
