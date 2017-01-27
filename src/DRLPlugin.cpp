@@ -13,7 +13,6 @@ using namespace gazebo;
 
 DRLPlugin::DRLPlugin() : numSteps(0), trainNet(true)
 {
-    actionTimer.Reset();
     actionInterval.Set(1,0);
 }
 
@@ -21,7 +20,7 @@ DRLPlugin::~DRLPlugin() {}
 
 void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 10000;
+    maxSteps = 5000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -54,7 +53,9 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     updateConnection = event::Events::ConnectWorldUpdateBegin(
         boost::bind(&DRLPlugin::onUpdate, this, _1));
 
-    actionTimer.Start();
+    // World simulation time will be used to synchronize the actions
+    worldPtr = model->GetWorld();
+    timeMark = worldPtr->GetSimTime();
 
     // Apply first action
     vector<float> observed_state = getState();
@@ -122,12 +123,11 @@ void DRLPlugin::trainAlgorithm()
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
         gzmsg << "Reseting model to initial position." << endl;
-        roverModel->resetModel();
+        roverModel->resetModel( true );
     }
 
-    common::Time elapsedTime = actionTimer.GetElapsed();
+    common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){
-
         gzmsg << endl;
         gzmsg << "Step = " << numSteps << endl;
         unsigned char* image_data = const_cast<unsigned char*>(roverModel->getImage());
@@ -173,15 +173,14 @@ void DRLPlugin::trainAlgorithm()
             serverControlPub->Publish(server_msg);
         }
 
-        actionTimer.Reset();
-        actionTimer.Start();
+        timeMark = worldPtr->GetSimTime();
     }
 }
 
 
 void DRLPlugin::runAlgorithm()
 {
-    common::Time elapsedTime = actionTimer.GetElapsed();
+    common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){
 
         // Feed input image to network
@@ -218,7 +217,6 @@ void DRLPlugin::runAlgorithm()
             serverControlPub->Publish(server_msg);
         }
 
-        actionTimer.Reset();
-        actionTimer.Start();
+        timeMark = worldPtr->GetSimTime();
     }
 }
