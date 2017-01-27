@@ -149,7 +149,7 @@ void QLearner::updateQValues( const float& reward )
 }
 
 
-void QLearner::savePolicy()
+void QLearner::savePolicy( bool standardize )
 {
     // Save a NEW files with qvalues and state.
     // Old files are lost
@@ -158,6 +158,39 @@ void QLearner::savePolicy()
 
     string state_file_name = outputDir + "qlearner_states.txt";
     string policy_file_name = outputDir + "qlearner_policy.txt";
+
+
+    if( standardize ){
+        float mean = 0;
+        unsigned counter = 0;
+        for(StatesContainer::iterator it = qlearnerStates.begin();
+                it != qlearnerStates.end(); ++it){
+            mean = accumulate( it->QValues.begin(), it->QValues.end(), mean );
+            counter += it->QValues.size();
+        }
+        mean /= counter;
+
+        float sum_squared_difference = 0;
+        for(StatesContainer::iterator it = qlearnerStates.begin();
+                it != qlearnerStates.end(); ++it){
+            for(vector<float>::iterator qvalue_it = it->QValues.begin();
+                    qvalue_it != it->QValues.end(); ++qvalue_it){
+                sum_squared_difference += pow(*qvalue_it - mean, 2);
+            }
+        }
+        float standard_deviation = sqrt( sum_squared_difference / counter );
+
+        // Update qvalues
+        for(StatesContainer::iterator it = qlearnerStates.begin();
+                it != qlearnerStates.end(); ++it){
+            for(vector<float>::iterator qvalue_it = it->QValues.begin();
+                    qvalue_it != it->QValues.end(); ++qvalue_it){
+                *qvalue_it = (*qvalue_it - mean)/standard_deviation;
+            }
+        }
+    }
+
+
     ofstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::out );
     state_file.open( state_file_name.c_str(), ios::out );

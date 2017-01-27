@@ -32,7 +32,7 @@ class QLearner{
     void updateQValues( const float& reward, const unsigned &state_index);
     void updateQValues( const float& reward );
     void loadPolicy();
-    void savePolicy();
+    void savePolicy( bool standardize = true );
 
     private:
     float alpha, gamma;

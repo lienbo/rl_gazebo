@@ -154,7 +154,7 @@ void DRLPlugin::trainAlgorithm()
 
             // Terminal state
             if( reward > -0.2 )
-                roverModel->resetModel();
+                roverModel->resetModel( true );
 
             const unsigned action = rlAgent->chooseAction( state_index, true );
             roverModel->applyAction( action );
