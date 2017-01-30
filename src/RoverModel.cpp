@@ -74,7 +74,7 @@ void RoverModel::checkParameterName( const string &parameter_name )
 }
 
 
-void RoverModel::applyAction(const int &action)
+void RoverModel::applyAction(const unsigned &action)
 {
     // The vehicle points to the X axis
     // It can go foward and backward (action can be negative)
@@ -82,23 +82,23 @@ void RoverModel::applyAction(const int &action)
     const int angle_limit = 5;
 
     switch( action ){
-    case(0):
+    case( Action::DO_NOTHING ):
         // Do nothing
         break;
-    case(1):
+    case( Action::FORWARD ):
         if( velocityState < speed_limit )
             velocityState += 1;
         break;
-    case(2):
+    case( Action::BACKWARD ):
         if( velocityState > - speed_limit )
             velocityState += - 1;
         break;
 
-    case(3):
+    case( Action::TURN_RIGHT ):
         if( steeringState < angle_limit )
             steeringState += 1;
         break;
-    case(4):
+    case( Action::TURN_LEFT ):
         if( steeringState > - angle_limit )
             steeringState += - 1;
         break;
@@ -330,6 +330,5 @@ const unsigned RoverModel::getImageWidth() const
 
 const unsigned RoverModel::getNumActions() const
 {
-    const unsigned num_actions = 5;
-    return num_actions;
+    return Action::NUM_ACTIONS;
 }

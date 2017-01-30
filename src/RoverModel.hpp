@@ -25,7 +25,7 @@ namespace gazebo{
         void resetModel();
         void resetModel( std::vector<math::Pose> initial_pos, std::vector<math::Vector3> destination_pos );
 
-        void applyAction(const int &action);
+        void applyAction(const unsigned &action);
         const float getReward() const;
         const bool isTerminalState() const;
 
@@ -41,6 +41,8 @@ namespace gazebo{
         const unsigned getNumActions() const;
 
         private:
+        enum Action{ DO_NOTHING, FORWARD, BACKWARD, TURN_RIGHT, TURN_LEFT, NUM_ACTIONS = 5 };
+
         void loadParameters();
         void initializeContacts();
         void initializeCamera();
