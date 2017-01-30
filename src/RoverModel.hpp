@@ -27,7 +27,7 @@ namespace gazebo{
 
         void applyAction(const unsigned &action);
         const float getReward() const;
-        const bool isTerminalState() const;
+        const bool isTerminalState();
 
         const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;
@@ -65,6 +65,8 @@ namespace gazebo{
         // Angles are in radians. Positive is counterclockwise
         int steeringState;
         int velocityState;
+
+        unsigned terminalStateCounter;
     };
 }
 #endif

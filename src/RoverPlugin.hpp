@@ -24,7 +24,7 @@ namespace gazebo{
         void printState( const std::vector<float> &observed_state );
         std::vector<float> getState();
         void trainAlgorithm();
-        void runAlgorithm();
+        void testAlgorithm();
 
         std::vector<math::Pose> initialPos;
         std::vector<math::Vector3> destinationPos;

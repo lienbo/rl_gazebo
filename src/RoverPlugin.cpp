@@ -66,7 +66,7 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
     roverModel->steeringWheelController();
-    train ? trainAlgorithm(): runAlgorithm();
+    train ? trainAlgorithm() : testAlgorithm();
 }
 
 
@@ -162,7 +162,7 @@ void RoverPlugin::trainAlgorithm()
     }
 }
 
-void RoverPlugin::runAlgorithm()
+void RoverPlugin::testAlgorithm()
 {
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){

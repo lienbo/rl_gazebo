@@ -80,7 +80,7 @@ void DRLPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
     roverModel->steeringWheelController();
-    trainNet ? trainAlgorithm() : runAlgorithm();
+    trainNet ? trainAlgorithm() : testAlgorithm();
 }
 
 
@@ -192,7 +192,7 @@ void DRLPlugin::trainAlgorithm()
 }
 
 
-void DRLPlugin::runAlgorithm()
+void DRLPlugin::testAlgorithm()
 {
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){

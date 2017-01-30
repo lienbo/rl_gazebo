@@ -7,7 +7,7 @@ using namespace gazebo;
 
 
 RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 destination_pos) :
-        steeringState(0), velocityState(0), outputDir("./gazebo/output/images/"), setPoint(destination_pos)
+        steeringState(0), velocityState(0), terminalStateCounter(0), outputDir("./gazebo/output/images/"), setPoint(destination_pos)
 {
     modelPtr = model;
     sdfFile = sdf;
@@ -150,17 +150,28 @@ const float RoverModel::getReward() const
     float distance = abs_position.Distance( setPoint );
 //    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
-    const float reward = - distance;
+    const float reward = - (distance);
 
     return reward;
 }
 
 
-const bool RoverModel::isTerminalState() const
+const bool RoverModel::isTerminalState()
 {
     math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
     float distance = abs_position.Distance( setPoint );
-    const bool terminal_state = (distance < 0.2) ? true : false;
+
+    if( distance < 0.2 ){
+        ++terminalStateCounter;
+    }else{
+        terminalStateCounter = 0;
+    }
+
+    // isTerminalState will only return true if we have X terminal states in a row
+    // This is required to the agent learn to stop when it reaches the terminal state
+    bool terminal_state = false;
+    if( terminalStateCounter >= 3 )
+        terminal_state = true;
 
     return terminal_state;
 }
