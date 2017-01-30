@@ -166,6 +166,16 @@ const float RoverModel::getReward() const
 }
 
 
+const bool RoverModel::isTerminalState() const
+{
+    math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
+    float distance = abs_position.Distance( setPoint );
+    const bool terminal_state = (distance < 0.2) ? true : false;
+
+    return terminal_state;
+}
+
+
 const math::Vector3 RoverModel::getDistanceState() const
 {
     const float grid_size = 0.2;
@@ -267,6 +277,7 @@ bool RoverModel::checkCollision()
 
 void RoverModel::resetModel( bool change_pose )
 {
+    gzmsg << "Reseting model to initial position." << endl;
     modelPtr->Reset();
 
     if( change_pose ){

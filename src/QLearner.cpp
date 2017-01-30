@@ -145,7 +145,7 @@ void QLearner::updateQValues( const float& reward )
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
     // lastAction points to the qvalue associated with the last action.
-    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * ( -10 ) - (last_state.QValue) );
+    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * ( 0 ) - (last_state.QValue) );
 }
 
 

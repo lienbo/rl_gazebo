@@ -26,6 +26,8 @@ namespace gazebo{
 
         void applyAction(const int &action);
         const float getReward() const;
+        const bool isTerminalState() const;
+
         const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;
         const math::Quaternion getOrientationState() const;

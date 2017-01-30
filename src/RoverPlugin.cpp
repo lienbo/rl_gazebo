@@ -114,7 +114,6 @@ void RoverPlugin::trainAlgorithm()
         const float bad_reward = -1000;
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
-        gzmsg << "Reseting model to initial position." << endl;
         roverModel->resetModel();
     }
 
@@ -123,15 +122,19 @@ void RoverPlugin::trainAlgorithm()
         gzmsg << endl;
         gzmsg << "Step = " << numSteps << endl;
 
+        // Terminal state
+        if( roverModel->isTerminalState() ){
+            gzmsg << "Model reached terminal state !!!" << endl;
+            const float good_reward = 1000;
+            rlAgent->updateQValues( good_reward );
+            roverModel->resetModel();
+        }
+
         const float reward = roverModel->getReward();
         vector<float> observed_state = getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
         roverModel->saveImage( state_index );
         rlAgent->updateQValues( reward, state_index );
-
-        // Terminal state
-        if( reward > -0.2 )
-            roverModel->resetModel();
 
         const unsigned action = rlAgent->chooseAction( state_index );
         roverModel->applyAction( action );
