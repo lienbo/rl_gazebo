@@ -200,6 +200,11 @@ void DRLPlugin::testAlgorithm()
         // Feed input image to network
         unsigned char* image_data = const_cast<unsigned char*>(roverModel->getImage());
         if( image_data ){
+            if( roverModel->isTerminalState() ){
+                gzmsg << "Model reached terminal state !!!" << endl;
+                roverModel->resetModel( initialPos, destinationPos );
+            }
+
             cv::Mat input_image = cv::Mat( roverModel->getImageHeight(),
                                            roverModel->getImageWidth(),
                                            CV_8UC3,

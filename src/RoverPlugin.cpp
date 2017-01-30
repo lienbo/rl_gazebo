@@ -166,6 +166,11 @@ void RoverPlugin::testAlgorithm()
 {
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){
+        if( roverModel->isTerminalState() ){
+            gzmsg << "Model reached terminal state !!!" << endl;
+            roverModel->resetModel( initialPos, destinationPos );
+        }
+
         vector<float> observed_state = getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
         const unsigned action = rlAgent->chooseAction( state_index, false );
