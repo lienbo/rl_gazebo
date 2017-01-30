@@ -9,13 +9,18 @@ using namespace gazebo;
 RoverPlugin::RoverPlugin() : numSteps(0), train(true)
 {
     actionInterval.Set(1,0);
+
+    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 0) );
+
+    destinationPos.push_back( math::Vector3(2, 0, 0.1) );
 }
 
 RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 1000;
+    maxSteps = 10000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -114,7 +119,7 @@ void RoverPlugin::trainAlgorithm()
         const float bad_reward = -1000;
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
-        roverModel->resetModel();
+        roverModel->resetModel( initialPos, destinationPos );
     }
 
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
@@ -125,9 +130,9 @@ void RoverPlugin::trainAlgorithm()
         // Terminal state
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
-            const float good_reward = 1000;
+            const float good_reward = 10000;
             rlAgent->updateQValues( good_reward );
-            roverModel->resetModel();
+            roverModel->resetModel( initialPos, destinationPos );
         }
 
         const float reward = roverModel->getReward();

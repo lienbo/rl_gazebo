@@ -22,7 +22,8 @@ namespace gazebo{
         void steeringWheelController();
 
         bool checkCollision();
-        void resetModel( bool change_pose = false );
+        void resetModel();
+        void resetModel( std::vector<math::Pose> initial_pos, std::vector<math::Vector3> destination_pos );
 
         void applyAction(const int &action);
         const float getReward() const;
@@ -45,24 +46,19 @@ namespace gazebo{
         void initializeCamera();
         void checkParameterName( const std::string &parameter_name );
 
+        const std::string outputDir;
+        math::Vector3 setPoint;
         sdf::ElementPtr sdfFile;
         physics::LinkPtr chassisLink;
         physics::ModelPtr modelPtr;
         physics::JointPtr frontLeftJoint, frontRightJoint;
         physics::JointPtr rearLeftJoint, rearRightJoint;
-
         sensors::CameraSensorPtr cameraPtr;
+
+        std::default_random_engine generator;
 
         typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
         ContactContainer contactPtrs;
-
-        const std::string outputDir;
-
-        math::Vector3 setPoint;
-        std::vector<math::Pose> initialPos;
-        std::vector<math::Vector3> destinationPos;
-        std::default_random_engine generator;
-        std::uniform_int_distribution<int> uniformDist;
 
         // Angles are in radians. Positive is counterclockwise
         int steeringState;

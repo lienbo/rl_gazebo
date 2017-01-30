@@ -26,6 +26,9 @@ namespace gazebo{
         void trainAlgorithm();
         void runAlgorithm();
 
+        std::vector<math::Pose> initialPos;
+        std::vector<math::Vector3> destinationPos;
+
         transport::PublisherPtr serverControlPub;
         event::ConnectionPtr updateConnection;
         boost::shared_ptr<RoverModel> roverModel;

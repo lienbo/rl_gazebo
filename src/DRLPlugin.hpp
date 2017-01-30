@@ -36,6 +36,9 @@ namespace gazebo{
         common::Time actionInterval, timeMark;
         physics::WorldPtr worldPtr;
 
+        std::vector<math::Pose> initialPos;
+        std::vector<math::Vector3> destinationPos;
+
         unsigned maxSteps, numSteps;
         bool trainNet;
     };

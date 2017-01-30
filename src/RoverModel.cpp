@@ -7,23 +7,13 @@ using namespace gazebo;
 
 
 RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 destination_pos) :
-        steeringState(0), velocityState(0), outputDir("./gazebo/output/images/"), setPoint(destination_pos), uniformDist(0, 3)
+        steeringState(0), velocityState(0), outputDir("./gazebo/output/images/"), setPoint(destination_pos)
 {
     modelPtr = model;
     sdfFile = sdf;
     loadParameters();
     initializeContacts();
     initializeCamera();
-
-    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(0, 4, .12, 0, 0, -1.5708) );
-    initialPos.push_back( math::Pose(-5.5, -3.3, .12, 0, 0, 1.5708) );
-    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 3.1416) );
-
-    destinationPos.push_back( math::Vector3(2, 0, 0.1) );
-    destinationPos.push_back( math::Vector3(-5, 0, 0.1) );
-    destinationPos.push_back( math::Vector3(-1.5, -3.5, 0.1) );
-    destinationPos.push_back( math::Vector3(6, 6, 0.1) );
 }
 
 
@@ -275,24 +265,32 @@ bool RoverModel::checkCollision()
 }
 
 
-void RoverModel::resetModel( bool change_pose )
+void RoverModel::resetModel()
 {
     gzmsg << "Reseting model to initial position." << endl;
     modelPtr->Reset();
-
-    if( change_pose ){
-        const unsigned new_pose = uniformDist(generator);
-        modelPtr->SetWorldPose( initialPos[new_pose] );
-
-        const unsigned new_destination = uniformDist(generator);
-        setPoint = destinationPos[new_pose];
-    }
 
     velocityState = 0;
     steeringState = 0;
 }
 
 
+void RoverModel::resetModel( vector<math::Pose> initial_pos, vector<math::Vector3> destination_pos )
+{
+    gzmsg << "Reseting model to initial position." << endl;
+    modelPtr->Reset();
+
+    velocityState = 0;
+    steeringState = 0;
+
+    uniform_int_distribution<int> init_uniform_dist(0, initial_pos.size() - 1);
+    const unsigned new_pose = init_uniform_dist(generator);
+    modelPtr->SetWorldPose( initial_pos[new_pose] );
+
+    uniform_int_distribution<int> dest_uniform_dist(0, destination_pos.size() - 1);
+    const unsigned new_destination = dest_uniform_dist(generator);
+    setPoint = destination_pos[new_destination];
+}
 
 
 void RoverModel::initializeCamera()

@@ -14,13 +14,23 @@ using namespace gazebo;
 DRLPlugin::DRLPlugin() : numSteps(0), trainNet(true)
 {
     actionInterval.Set(1,0);
+
+    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(0, 4, .12, 0, 0, -1.5708) );
+    initialPos.push_back( math::Pose(-5.5, -3.3, .12, 0, 0, 1.5708) );
+    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 3.1416) );
+
+    destinationPos.push_back( math::Vector3(2, 0, 0.1) );
+    destinationPos.push_back( math::Vector3(-5, 0, 0.1) );
+    destinationPos.push_back( math::Vector3(-1.5, -3.5, 0.1) );
+    destinationPos.push_back( math::Vector3(6, 6, 0.1) );
 }
 
 DRLPlugin::~DRLPlugin() {}
 
 void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 5000;
+    maxSteps = 10000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -36,7 +46,7 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
 
     const string model_file = "./caffe/network/drl_gazebo.prototxt";
-    string weights_file = "./caffe/models/drl_gazebo_iter_10000.caffemodel";
+    string weights_file = "./caffe/models/drl_gazebo_iter_1000.caffemodel";
     if( sdf->HasElement( "weights_file" ) ){
         weights_file = sdf->Get<string>("weights_file");
     }
@@ -70,7 +80,7 @@ void DRLPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
     roverModel->steeringWheelController();
-    trainNet ? trainAlgorithm(): runAlgorithm();
+    trainNet ? trainAlgorithm() : runAlgorithm();
 }
 
 
@@ -123,7 +133,7 @@ void DRLPlugin::trainAlgorithm()
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
         gzmsg << "Reseting model to initial position." << endl;
-        roverModel->resetModel( true );
+        roverModel->resetModel( initialPos, destinationPos );
     }
 
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
@@ -132,6 +142,14 @@ void DRLPlugin::trainAlgorithm()
         gzmsg << "Step = " << numSteps << endl;
         unsigned char* image_data = const_cast<unsigned char*>(roverModel->getImage());
         if( image_data ){
+            // Terminal state
+            if( roverModel->isTerminalState() ){
+                gzmsg << "Model reached terminal state !!!" << endl;
+                const float good_reward = 10000;
+                rlAgent->updateQValues( good_reward );
+                roverModel->resetModel( initialPos, destinationPos );
+            }
+
             cv::Mat input_image = cv::Mat( roverModel->getImageHeight(),
                                            roverModel->getImageWidth(),
                                            CV_8UC3,
@@ -150,10 +168,6 @@ void DRLPlugin::trainAlgorithm()
 
             roverModel->saveImage( state_index );
             rlAgent->updateQValues( reward, state_index );
-
-            // Terminal state
-            if( reward > -0.2 )
-                roverModel->resetModel( true );
 
             const unsigned action = rlAgent->chooseAction( state_index, true );
             roverModel->applyAction( action );
