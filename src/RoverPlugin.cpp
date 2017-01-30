@@ -8,7 +8,6 @@ using namespace gazebo;
 
 RoverPlugin::RoverPlugin() : numSteps(0), train(true)
 {
-    actionTimer.Reset();
     actionInterval.Set(1,0);
 }
 
@@ -16,7 +15,7 @@ RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 20000;
+    maxSteps = 1000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -45,7 +44,9 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     updateConnection = event::Events::ConnectWorldUpdateBegin(
         boost::bind(&RoverPlugin::onUpdate, this, _1));
 
-    actionTimer.Start();
+    // World simulation time will be used to synchronize the actions
+    worldPtr = model->GetWorld();
+    timeMark = worldPtr->GetSimTime();
 
     // Apply first action
     vector<float> observed_state = getState();
@@ -95,7 +96,6 @@ vector<float> RoverPlugin::getState()
 void RoverPlugin::printState( const vector<float> &observed_state )
 {
     vector<float>::const_iterator it;
-    gzmsg << endl;
     stringstream stream;
     stream << "State = ( ";
     for(it = observed_state.begin(); it != observed_state.end(); ++it)
@@ -118,8 +118,11 @@ void RoverPlugin::trainAlgorithm()
         roverModel->resetModel();
     }
 
-    common::Time elapsedTime = actionTimer.GetElapsed();
+    common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){
+        gzmsg << endl;
+        gzmsg << "Step = " << numSteps << endl;
+
         const float reward = roverModel->getReward();
         vector<float> observed_state = getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
@@ -147,14 +150,13 @@ void RoverPlugin::trainAlgorithm()
             serverControlPub->Publish(server_msg);
         }
 
-        actionTimer.Reset();
-        actionTimer.Start();
+        timeMark = worldPtr->GetSimTime();
     }
 }
 
 void RoverPlugin::runAlgorithm()
 {
-    common::Time elapsedTime = actionTimer.GetElapsed();
+    common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
     if( elapsedTime >= actionInterval ){
         vector<float> observed_state = getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
@@ -173,7 +175,6 @@ void RoverPlugin::runAlgorithm()
             serverControlPub->Publish(server_msg);
         }
 
-        actionTimer.Reset();
-        actionTimer.Start();
+        timeMark = worldPtr->GetSimTime();
     }
 }

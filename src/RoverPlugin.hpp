@@ -31,8 +31,9 @@ namespace gazebo{
         boost::shared_ptr<RoverModel> roverModel;
         boost::shared_ptr<QLearner> rlAgent;
         // Counts the time between the action and its result
-        common::Timer actionTimer;
-        common::Time actionInterval;
+        common::Time actionInterval, timeMark;
+        physics::WorldPtr worldPtr;
+
         unsigned maxSteps, numSteps;
         bool train;
     };
