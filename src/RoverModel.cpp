@@ -7,10 +7,13 @@ using namespace gazebo;
 
 
 RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 destination_pos) :
-        steeringState(0), velocityState(0), terminalStateCounter(0), outputDir("./gazebo/output/images/"), setPoint(destination_pos)
+        steeringState(0), velocityState(0), terminalStateCounter(0), outputDir("./gazebo/output/images/"),
+        setPoint(destination_pos), distanceCounter(0)
 {
     modelPtr = model;
     sdfFile = sdf;
+
+    lastDistance = getDestinationDistance();
     loadParameters();
     initializeContacts();
     initializeCamera();
@@ -143,7 +146,7 @@ void RoverModel::steeringWheelController()
 }
 
 
-const float RoverModel::getDistance() const
+const float RoverModel::getDestinationDistance() const
 {
     math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
     const float distance = abs_position.Distance( setPoint );
@@ -154,7 +157,7 @@ const float RoverModel::getDistance() const
 
 const float RoverModel::getReward() const
 {
-    const float distance = getDistance();
+    const float distance = getDestinationDistance();
 //    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
 
@@ -162,7 +165,7 @@ const float RoverModel::getReward() const
 
     // Terminal state reward
     if( distance < 0.2 ){
-        reward = 1000;
+        reward = 100;
     }
 
     return reward;
@@ -171,7 +174,7 @@ const float RoverModel::getReward() const
 
 const bool RoverModel::isTerminalState()
 {
-    const float distance = getDistance();
+    const float distance = getDestinationDistance();
 
     if( distance < 0.2 ){
         ++terminalStateCounter;
@@ -186,6 +189,24 @@ const bool RoverModel::isTerminalState()
         terminal_state = true;
 
     return terminal_state;
+}
+
+
+const bool RoverModel::isDistancing()
+{
+    const float distance = getDestinationDistance();
+    if( distance >= lastDistance ){
+        ++distanceCounter;
+    }else{
+        distanceCounter = 0;
+    }
+    lastDistance = distance;
+
+    bool is_farther = false;
+    if( distanceCounter >= 7 )
+        is_farther = true;
+
+    return is_farther;
 }
 
 
@@ -296,6 +317,9 @@ void RoverModel::resetModel()
     modelPtr->Reset();
     gzmsg << "Reseting model to initial position." << endl;
     gzmsg << endl;
+
+    lastDistance = getDestinationDistance();
+    distanceCounter = 0;
 }
 
 
@@ -316,6 +340,9 @@ void RoverModel::resetModel( vector<math::Pose> initial_pos, vector<math::Vector
 
     gzmsg << "Reseting model to initial position." << endl;
     gzmsg << endl;
+
+    lastDistance = getDestinationDistance();
+    distanceCounter = 0;
 }
 
 

@@ -1,5 +1,5 @@
-#ifndef ROVERMODEL_HPP_
-#define ROVERMODEL_HPP_
+#ifndef ROVER_MODEL_HPP_
+#define ROVER_MODEL_HPP_
 
 // Copyright © 2017 Thomio Watanabe
 // Universidade de Sao Paulo
@@ -26,9 +26,10 @@ namespace gazebo{
         void resetModel( std::vector<math::Pose> initial_pos, std::vector<math::Vector3> destination_pos );
 
         void applyAction(const unsigned &action);
-        const float getDistance() const;
+        const float getDestinationDistance() const;
         const float getReward() const;
         const bool isTerminalState();
+        const bool isDistancing();
 
         const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;
@@ -69,7 +70,8 @@ namespace gazebo{
         int steeringState;
         int velocityState;
 
-        unsigned terminalStateCounter;
+        unsigned terminalStateCounter, distanceCounter;
+        float lastDistance;
     };
 }
 #endif
