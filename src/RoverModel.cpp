@@ -143,10 +143,18 @@ void RoverModel::steeringWheelController()
 }
 
 
-const float RoverModel::getReward() const
+const float RoverModel::getDistance() const
 {
     math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
     const float distance = abs_position.Distance( setPoint );
+
+    return distance;
+}
+
+
+const float RoverModel::getReward() const
+{
+    const float distance = getDistance();
 //    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
 
@@ -163,8 +171,7 @@ const float RoverModel::getReward() const
 
 const bool RoverModel::isTerminalState()
 {
-    math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
-    float distance = abs_position.Distance( setPoint );
+    const float distance = getDistance();
 
     if( distance < 0.2 ){
         ++terminalStateCounter;

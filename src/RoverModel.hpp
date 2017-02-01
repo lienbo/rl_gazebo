@@ -26,6 +26,7 @@ namespace gazebo{
         void resetModel( std::vector<math::Pose> initial_pos, std::vector<math::Vector3> destination_pos );
 
         void applyAction(const unsigned &action);
+        const float getDistance() const;
         const float getReward() const;
         const bool isTerminalState();
 
