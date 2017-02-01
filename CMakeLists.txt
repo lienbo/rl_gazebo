@@ -38,7 +38,11 @@ if( COMPILE_ROS_PLUGIN )
     include_directories( ${catkin_INCLUDE_DIRS} )
 
     add_library(RosRoverPlugin SHARED src/RosRoverPlugin.cpp src/RoverModel.cpp)
-    target_link_libraries(RosRoverPlugin ${GAZEBO_LIBRARIES} ${Boost_LIBRARIES} ${catkin_LIBRARIES})
+
+    target_link_libraries(RosRoverPlugin
+        ${GAZEBO_LIBRARIES}
+        ${Boost_LIBRARIES}
+        ${catkin_LIBRARIES})
 
     install(TARGETS RosRoverPlugin
         LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
@@ -46,18 +50,32 @@ endif()
 
 
 ### Compile and install deep reinforcement learning plugin
-find_package( Caffe REQUIRED )
-include_directories( ${Caffe_INCLUDE_DIRS} )
+if( COMPILE_DRL_PLUGIN )
+    find_package( Caffe REQUIRED )
+    include_directories( ${Caffe_INCLUDE_DIRS} )
 
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+    find_package( OpenCV REQUIRED )
+    include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-pkg_check_modules( hdf5 REQUIRED )
-include_directories( ${hdf5_INCLUDE_DIRS} )
+    pkg_check_modules( hdf5 REQUIRED )
+    include_directories( ${hdf5_INCLUDE_DIRS} )
 
-add_library( DRLPlugin SHARED src/DRLPlugin.cpp src/CaffeInference.cpp src/RoverModel.cpp src/QLearner.cpp )
-target_link_libraries( DRLPlugin ${Caffe_LIBRARIES} ${Boost_LIBRARIES} glog protobuf ${hdf5_LIBRARIES} ${OpenCV_LIBRARIES} ${GAZEBO_LIBRARIES})
+    add_library( DRLPlugin SHARED
+        src/DRLPlugin.cpp
+        src/CaffeInference.cpp
+        src/RoverModel.cpp
+        src/QLearner.cpp )
 
-### Install plugin and models
-install(TARGETS DRLPlugin
-    LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
+    target_link_libraries( DRLPlugin
+        ${Caffe_LIBRARIES}
+        ${Boost_LIBRARIES}
+        glog
+        protobuf
+        ${hdf5_LIBRARIES}
+        ${OpenCV_LIBRARIES}
+        ${GAZEBO_LIBRARIES})
+
+    ### Install plugin and models
+    install(TARGETS DRLPlugin
+        LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
+endif()
