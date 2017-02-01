@@ -21,8 +21,9 @@ namespace gazebo{
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
         void onUpdate( const common::UpdateInfo &info );
-        void printState( const std::vector<float> &observed_state );
-        std::vector<float> getState();
+        void printState( const std::vector<float> &observed_state ) const;
+        std::vector<float> getState() const;
+        void firstAction() const;
         void trainAlgorithm();
         void testAlgorithm();
 
@@ -38,6 +39,8 @@ namespace gazebo{
         physics::WorldPtr worldPtr;
 
         unsigned maxSteps, numSteps;
+        unsigned rewardCounter;
+        float lastReward;
         bool train;
     };
     GZ_REGISTER_MODEL_PLUGIN(RoverPlugin)

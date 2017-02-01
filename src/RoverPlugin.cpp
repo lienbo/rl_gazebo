@@ -6,7 +6,7 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numSteps(0), train(true)
+RoverPlugin::RoverPlugin() : numSteps(0), rewardCounter(0), lastReward(0), train(true)
 {
     actionInterval.Set(1,0);
 
@@ -20,7 +20,7 @@ RoverPlugin::~RoverPlugin() {}
 
 void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
 {
-    maxSteps = 10000;
+    maxSteps = 5000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
@@ -54,11 +54,7 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     timeMark = worldPtr->GetSimTime();
 
     // Apply first action
-    vector<float> observed_state = getState();
-    const unsigned state_index = rlAgent->fetchState( observed_state );
-    const unsigned action = rlAgent->chooseAction( state_index );
-    roverModel->applyAction( action );
-    gzmsg << "Applying action = " << action << endl;
+    firstAction();
 }
 
 
@@ -70,7 +66,7 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 }
 
 
-vector<float> RoverPlugin::getState()
+vector<float> RoverPlugin::getState() const
 {
     vector<float> observed_state;
 
@@ -98,7 +94,7 @@ vector<float> RoverPlugin::getState()
 }
 
 
-void RoverPlugin::printState( const vector<float> &observed_state )
+void RoverPlugin::printState( const vector<float> &observed_state ) const
 {
     vector<float>::const_iterator it;
     stringstream stream;
@@ -116,38 +112,57 @@ void RoverPlugin::trainAlgorithm()
     bool collision = roverModel->checkCollision();
     if( collision ){
         gzmsg << "Collision detected !!!" << endl;
-        const float bad_reward = -1000;
+        const float bad_reward = -100;
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
         roverModel->resetModel( initialPos, destinationPos );
+        firstAction();
     }
 
-    common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
-    if( elapsedTime >= actionInterval ){
+    common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
+    if( elapsed_time >= actionInterval ){
         gzmsg << endl;
         gzmsg << "Step = " << numSteps << endl;
 
         // Terminal state
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
-            const float good_reward = 10000;
+            const float good_reward = 1000;
             rlAgent->updateQValues( good_reward );
             roverModel->resetModel( initialPos, destinationPos );
+            firstAction();
+        }else{
+            const float reward = roverModel->getReward();
+            if( reward <= lastReward ){
+                ++rewardCounter;
+            }else{
+                rewardCounter = 0;
+            }
+            lastReward = reward;
+
+            if( rewardCounter >= 7 ){
+                gzmsg << "Wrong dirrection !" << endl;
+                const float bad_reward = -10;
+                rlAgent->updateQValues( bad_reward );
+                // Reset gazebo model to initial position
+                roverModel->resetModel( initialPos, destinationPos );
+                firstAction();
+                rewardCounter = 0;
+            }else{
+                vector<float> observed_state = getState();
+                const unsigned state_index = rlAgent->fetchState( observed_state );
+                roverModel->saveImage( state_index );
+                rlAgent->updateQValues( reward, state_index );
+
+                const unsigned action = rlAgent->chooseAction( state_index );
+                roverModel->applyAction( action );
+                gzmsg << "Applying action = " << action << endl;
+            }
         }
-
-        const float reward = roverModel->getReward();
-        vector<float> observed_state = getState();
-        const unsigned state_index = rlAgent->fetchState( observed_state );
-        roverModel->saveImage( state_index );
-        rlAgent->updateQValues( reward, state_index );
-
-        const unsigned action = rlAgent->chooseAction( state_index );
-        roverModel->applyAction( action );
-        gzmsg << "Applying action = " << action << endl;
 
         ++numSteps;
         // Terminate simulation after maxStep
-        if( numSteps == maxSteps){
+        if( numSteps == maxSteps ){
             rlAgent->savePolicy();
 
             gzmsg << endl;
@@ -164,8 +179,8 @@ void RoverPlugin::trainAlgorithm()
 
 void RoverPlugin::testAlgorithm()
 {
-    common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
-    if( elapsedTime >= actionInterval ){
+    common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
+    if( elapsed_time >= actionInterval ){
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
             roverModel->resetModel( initialPos, destinationPos );
@@ -176,6 +191,7 @@ void RoverPlugin::testAlgorithm()
         const unsigned action = rlAgent->chooseAction( state_index, false );
         roverModel->applyAction( action );
         gzmsg << "Applying action = " << action << endl;
+        gzmsg << endl;
 
         ++numSteps;
         // Terminate simulation after maxStep
@@ -190,4 +206,16 @@ void RoverPlugin::testAlgorithm()
 
         timeMark = worldPtr->GetSimTime();
     }
+}
+
+
+// This function doesn't call updateQValues because the initial position doesn't
+// have a last state to update.
+void RoverPlugin::firstAction() const
+{
+    vector<float> observed_state = getState();
+    const unsigned state_index = rlAgent->fetchState( observed_state );
+    const unsigned action = rlAgent->chooseAction( state_index );
+    roverModel->applyAction( action );
+    gzmsg << "Applying action = " << action << endl;
 }
