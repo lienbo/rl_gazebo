@@ -39,8 +39,6 @@ namespace gazebo{
         physics::WorldPtr worldPtr;
 
         unsigned maxSteps, numSteps;
-        unsigned rewardCounter;
-        float lastReward;
         bool train;
     };
     GZ_REGISTER_MODEL_PLUGIN(RoverPlugin)

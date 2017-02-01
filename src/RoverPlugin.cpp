@@ -6,7 +6,7 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numSteps(0), rewardCounter(0), lastReward(0), train(true)
+RoverPlugin::RoverPlugin() : numSteps(0), train(true)
 {
     actionInterval.Set(1,0);
 
@@ -66,6 +66,19 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 }
 
 
+void RoverPlugin::printState( const vector<float> &observed_state ) const
+{
+    vector<float>::const_iterator it;
+    stringstream stream;
+    stream << "State = ( ";
+    for(it = observed_state.begin(); it != observed_state.end(); ++it)
+        stream << setprecision(2) << *it << " ";
+    stream << ")";
+
+    gzmsg << stream.str() << endl;
+}
+
+
 vector<float> RoverPlugin::getState() const
 {
     vector<float> observed_state;
@@ -94,16 +107,15 @@ vector<float> RoverPlugin::getState() const
 }
 
 
-void RoverPlugin::printState( const vector<float> &observed_state ) const
+// This function doesn't call updateQValues because the initial position doesn't
+// have a last state to update.
+void RoverPlugin::firstAction() const
 {
-    vector<float>::const_iterator it;
-    stringstream stream;
-    stream << "State = ( ";
-    for(it = observed_state.begin(); it != observed_state.end(); ++it)
-        stream << setprecision(2) << *it << " ";
-    stream << ")";
-
-    gzmsg << stream.str() << endl;
+    vector<float> observed_state = getState();
+    const unsigned state_index = rlAgent->fetchState( observed_state );
+    const unsigned action = rlAgent->chooseAction( state_index );
+    roverModel->applyAction( action );
+    gzmsg << "Applying action = " << action << endl;
 }
 
 
@@ -129,37 +141,28 @@ void RoverPlugin::trainAlgorithm()
             gzmsg << "Model reached terminal state !!!" << endl;
             roverModel->resetModel( initialPos, destinationPos );
             firstAction();
+
+        }else if( roverModel->isDistancing() ){
+            // Reset model if it is going in the opposite direction
+            // This helps reduce the number of states decreasing the learning time
+            gzmsg << "Wrong direction !" << endl;
+            roverModel->resetModel( initialPos, destinationPos );
+            firstAction();
+
         }else{
             const float reward = roverModel->getReward();
-            if( reward <= lastReward ){
-                ++rewardCounter;
-            }else{
-                rewardCounter = 0;
-            }
-            lastReward = reward;
+            vector<float> observed_state = getState();
+            const unsigned state_index = rlAgent->fetchState( observed_state );
+            roverModel->saveImage( state_index );
+            rlAgent->updateQValues( reward, state_index );
 
-            if( rewardCounter >= 7 ){
-                gzmsg << "Wrong dirrection !" << endl;
-                const float bad_reward = -10;
-                rlAgent->updateQValues( bad_reward );
-                // Reset gazebo model to initial position
-                roverModel->resetModel( initialPos, destinationPos );
-                firstAction();
-                rewardCounter = 0;
-            }else{
-                vector<float> observed_state = getState();
-                const unsigned state_index = rlAgent->fetchState( observed_state );
-                roverModel->saveImage( state_index );
-                rlAgent->updateQValues( reward, state_index );
-
-                const unsigned action = rlAgent->chooseAction( state_index );
-                roverModel->applyAction( action );
-                gzmsg << "Applying action = " << action << endl;
-            }
+            const unsigned action = rlAgent->chooseAction( state_index );
+            roverModel->applyAction( action );
+            gzmsg << "Applying action = " << action << endl;
         }
 
         ++numSteps;
-        // Terminate simulation after maxStep
+        // Terminate simulation after maxSteps
         if( numSteps == maxSteps ){
             rlAgent->savePolicy();
 
@@ -204,16 +207,4 @@ void RoverPlugin::testAlgorithm()
 
         timeMark = worldPtr->GetSimTime();
     }
-}
-
-
-// This function doesn't call updateQValues because the initial position doesn't
-// have a last state to update.
-void RoverPlugin::firstAction() const
-{
-    vector<float> observed_state = getState();
-    const unsigned state_index = rlAgent->fetchState( observed_state );
-    const unsigned action = rlAgent->chooseAction( state_index );
-    roverModel->applyAction( action );
-    gzmsg << "Applying action = " << action << endl;
 }
