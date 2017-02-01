@@ -93,7 +93,6 @@ void RoverModel::applyAction(const unsigned &action)
         if( velocityState > - speed_limit )
             velocityState += - 1;
         break;
-
     case( Action::TURN_RIGHT ):
         if( steeringState < angle_limit )
             steeringState += 1;
@@ -147,10 +146,16 @@ void RoverModel::steeringWheelController()
 const float RoverModel::getReward() const
 {
     math::Vector3 abs_position = modelPtr->GetWorldPose().pos;
-    float distance = abs_position.Distance( setPoint );
+    const float distance = abs_position.Distance( setPoint );
 //    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
-    const float reward = - (distance);
+
+    float reward = - distance;
+
+    // Terminal state reward
+    if( distance < 0.2 ){
+        reward = 1000;
+    }
 
     return reward;
 }
@@ -170,7 +175,7 @@ const bool RoverModel::isTerminalState()
     // isTerminalState will only return true if we have X terminal states in a row
     // This is required to the agent learn to stop when it reaches the terminal state
     bool terminal_state = false;
-    if( terminalStateCounter >= 3 )
+    if( terminalStateCounter >= 4 )
         terminal_state = true;
 
     return terminal_state;
@@ -278,21 +283,21 @@ bool RoverModel::checkCollision()
 
 void RoverModel::resetModel()
 {
-    gzmsg << "Reseting model to initial position." << endl;
-    modelPtr->Reset();
-
     velocityState = 0;
     steeringState = 0;
+
+    modelPtr->Reset();
+    gzmsg << "Reseting model to initial position." << endl;
+    gzmsg << endl;
 }
 
 
 void RoverModel::resetModel( vector<math::Pose> initial_pos, vector<math::Vector3> destination_pos )
 {
-    gzmsg << "Reseting model to initial position." << endl;
-    modelPtr->Reset();
-
     velocityState = 0;
     steeringState = 0;
+
+    modelPtr->Reset();
 
     uniform_int_distribution<int> init_uniform_dist(0, initial_pos.size() - 1);
     const unsigned new_pose = init_uniform_dist(generator);
@@ -301,6 +306,9 @@ void RoverModel::resetModel( vector<math::Pose> initial_pos, vector<math::Vector
     uniform_int_distribution<int> dest_uniform_dist(0, destination_pos.size() - 1);
     const unsigned new_destination = dest_uniform_dist(generator);
     setPoint = destination_pos[new_destination];
+
+    gzmsg << "Reseting model to initial position." << endl;
+    gzmsg << endl;
 }
 
 

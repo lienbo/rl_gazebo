@@ -127,8 +127,6 @@ void RoverPlugin::trainAlgorithm()
         // Terminal state
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
-            const float good_reward = 1000;
-            rlAgent->updateQValues( good_reward );
             roverModel->resetModel( initialPos, destinationPos );
             firstAction();
         }else{

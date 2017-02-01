@@ -50,9 +50,11 @@ namespace gazebo{
 
         const std::string outputDir;
         math::Vector3 setPoint;
+
         sdf::ElementPtr sdfFile;
-        physics::LinkPtr chassisLink;
         physics::ModelPtr modelPtr;
+
+        physics::LinkPtr chassisLink;
         physics::JointPtr frontLeftJoint, frontRightJoint;
         physics::JointPtr rearLeftJoint, rearRightJoint;
         sensors::CameraSensorPtr cameraPtr;
