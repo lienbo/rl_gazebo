@@ -2,7 +2,7 @@
 <sdf version="1.5">
     <world name="default">
         <scene>
-            <grid>false</grid>
+<!--            <grid>false</grid>-->
             <origin_visual>false</origin_visual>
         </scene>
 
@@ -14,9 +14,20 @@
             <uri>model://ground_plane</uri>
         </include>
 
-        <include>
-            <uri>model://rover</uri>
-        </include>
+        <model name="rl_rover">
+            <include>
+                <uri>model://rover</uri>
+            </include>
+            <plugin name="RoverPlugin" filename="libRoverPlugin.so">
+                <train>true</train>
+                <max_steps>2000</max_steps>
+                <chassis_name>rover::chassis</chassis_name>
+                <front_left_joint>rover::front_left_joint</front_left_joint>
+                <front_right_joint>rover::front_right_joint</front_right_joint>
+                <rear_left_joint>rover::rear_left_joint</rear_left_joint>
+                <rear_right_joint>rover::rear_right_joint</rear_right_joint>
+            </plugin>
+        </model>
 
         <include>
             <uri>model://walls</uri>
