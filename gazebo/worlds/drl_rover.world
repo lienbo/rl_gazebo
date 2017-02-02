@@ -19,7 +19,7 @@
                 <uri>model://rover</uri>
             </include>
             <plugin name="DRLPlugin" filename="libDRLPlugin.so">
-                <train>true</train>
+                <mode>train</mode>
                 <max_steps>2000</max_steps>
                 <chassis_name>rover::chassis</chassis_name>
                 <front_left_joint>rover::front_left_joint</front_left_joint>

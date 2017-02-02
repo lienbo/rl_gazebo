@@ -3,7 +3,7 @@
     <world name="default">
         <scene>
 <!--            <grid>false</grid>-->
-            <origin_visual>false</origin_visual>
+<!--            <origin_visual>false</origin_visual>-->
         </scene>
 
         <include>
@@ -19,8 +19,9 @@
                 <uri>model://rover</uri>
             </include>
             <plugin name="RoverPlugin" filename="libRoverPlugin.so">
-                <train>true</train>
+                <mode>train</mode>
                 <max_steps>2000</max_steps>
+
                 <chassis_name>rover::chassis</chassis_name>
                 <front_left_joint>rover::front_left_joint</front_left_joint>
                 <front_right_joint>rover::front_right_joint</front_right_joint>
@@ -28,40 +29,6 @@
                 <rear_right_joint>rover::rear_right_joint</rear_right_joint>
             </plugin>
         </model>
-
-        <include>
-            <uri>model://walls</uri>
-        </include>
-
-        <include>
-            <uri>model://box_obstacle</uri>
-            <name>box_obstacle_01</name>
-            <pose>3.5 3.5 0.5 0 0 0</pose>
-        </include>
-
-        <include>
-            <uri>model://box_obstacle</uri>
-            <name>box_obstacle_02</name>
-            <pose>-3.5 3.5 0.5 0 0 0</pose>
-        </include>
-
-        <include>
-            <uri>model://box_obstacle</uri>
-            <name>box_obstacle_03</name>
-            <pose>-3.5 -3.5 0.5 0 0 0</pose>
-        </include>
-
-        <include>
-            <uri>model://box_obstacle</uri>
-            <name>box_obstacle_04</name>
-            <pose>3.5 -3.5 0.5 0 0 0</pose>
-        </include>
-
-        <include>
-            <uri>model://box_obstacle</uri>
-            <name>box_obstacle_05</name>
-            <pose>-2 0 0.5 0 0 0</pose>
-        </include>
 
     </world>
 </sdf>

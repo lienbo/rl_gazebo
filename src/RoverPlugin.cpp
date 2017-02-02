@@ -57,8 +57,15 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 
 void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
 {
-    if( sdfPtr->HasElement( "train" ) )
-        train = sdfPtr->Get<bool>("train");
+    if( sdfPtr->HasElement( "mode" ) ){
+        string execution_mode = sdfPtr->Get<string>("mode");
+        if( execution_mode == "train" ){
+            train = true;
+        }
+        if( execution_mode == "test" ){
+            train = false;
+        }
+    }
 
     if( sdfPtr->HasElement( "max_steps" ) )
         maxSteps = sdfPtr->Get<unsigned>("max_steps");
