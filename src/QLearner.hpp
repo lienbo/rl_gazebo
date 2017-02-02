@@ -1,5 +1,10 @@
-#ifndef QLearner_HPP_
-#define QLearner_HPP_
+#ifndef QLEARNER_HPP_
+#define QLEARNER_HPP_
+
+// Copyright © 2017 Thomio Watanabe
+// Universidade de Sao Paulo
+// Laboratorio de robotica movel
+// January 2017
 
 #include <vector>
 #include <random>
@@ -31,8 +36,9 @@ class QLearner{
     const unsigned chooseAction( const unsigned &state_index, const bool &training = true );
     void updateQValues( const float& reward, const unsigned &state_index);
     void updateQValues( const float& reward );
+    void printQValues( const std::string &message, const unsigned &current_index ) const;
     void loadPolicy();
-    void savePolicy( bool standardize = true );
+    void savePolicy( bool standardize = false );
 
     private:
     float alpha, gamma;
