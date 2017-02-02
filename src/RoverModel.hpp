@@ -15,7 +15,7 @@
 namespace gazebo{
     class RoverModel{
         public:
-        RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 );
+        RoverModel( physics::ModelPtr model, sdf::ElementPtr sdf );
         ~RoverModel();
 
         void velocityController() const;

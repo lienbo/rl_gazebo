@@ -6,41 +6,37 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numSteps(0), train(true)
+RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
 {
     actionInterval.Set(1,0);
 
-    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 0) );
+    // Forward and backward
+//    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 0) );
+
+    // Turn left and right
+    initialPos.push_back( math::Pose(-2, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-2, 2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(6, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(6, 2, .12, 0, 0, 0) );
 
     destinationPos.push_back( math::Vector3(2, 0, 0.1) );
 }
 
+
 RoverPlugin::~RoverPlugin() {}
 
-void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
+
+void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 {
-    maxSteps = 5000;
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
 
+    loadParameters( sdfPtr );
 
-    math::Vector3 destination_pos(2, 0, 0.1);
-    if( sdf->HasElement( "destination" ) ){
-        destination_pos = sdf->Get<math::Vector3>("destination");
-        gzmsg << "Set destination to = ( " << \
-            destination_pos.x << ", " << destination_pos.y << ", " << destination_pos.z << " )"<< endl;
-    }
-    roverModel = boost::make_shared<RoverModel>(model, sdf, destination_pos);
-
+    roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
     rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
-
-    if( sdf->HasElement( "train" ) )
-        train = sdf->Get<bool>("train");
-
-    if( sdf->HasElement( "max_steps" ) )
-        maxSteps = sdf->Get<unsigned>("max_steps");
 
     rlAgent->loadPolicy();
 
@@ -54,7 +50,18 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     timeMark = worldPtr->GetSimTime();
 
     // Apply first action
+    roverModel->resetModel( initialPos, destinationPos );
     firstAction();
+}
+
+
+void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
+{
+    if( sdfPtr->HasElement( "train" ) )
+        train = sdfPtr->Get<bool>("train");
+
+    if( sdfPtr->HasElement( "max_steps" ) )
+        maxSteps = sdfPtr->Get<unsigned>("max_steps");
 }
 
 
@@ -153,7 +160,7 @@ void RoverPlugin::trainAlgorithm()
             const float reward = roverModel->getReward();
             vector<float> observed_state = getState();
             const unsigned state_index = rlAgent->fetchState( observed_state );
-            roverModel->saveImage( state_index );
+//            roverModel->saveImage( state_index );
             rlAgent->updateQValues( reward, state_index );
 
             const unsigned action = rlAgent->chooseAction( state_index );

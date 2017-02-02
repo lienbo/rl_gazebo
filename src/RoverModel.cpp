@@ -6,14 +6,16 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverModel::RoverModel(physics::ModelPtr model, sdf::ElementPtr sdf, math::Vector3 destination_pos) :
-        steeringState(0), velocityState(0), terminalStateCounter(0), outputDir("./gazebo/output/images/"),
-        setPoint(destination_pos), distanceCounter(0)
+RoverModel::RoverModel( physics::ModelPtr model, sdf::ElementPtr sdf ) :
+        steeringState(0), velocityState(0), terminalStateCounter(0),
+        outputDir("./gazebo/output/images/"), distanceCounter(0)
 {
     modelPtr = model;
     sdfFile = sdf;
 
+    setPoint.Set(2, 0, 0.1);
     lastDistance = getDestinationDistance();
+
     loadParameters();
     initializeContacts();
     initializeCamera();

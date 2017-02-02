@@ -35,14 +35,7 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
 
-    math::Vector3 destination_pos(2, 0, 0.1);
-    if( sdf->HasElement( "destination" ) ){
-        destination_pos = sdf->Get<math::Vector3>("destination");
-        gzmsg << "Set destination to = ( " << \
-            destination_pos.x << ", " << destination_pos.y << ", " << destination_pos.z << " )"<< endl;
-    }
-    roverModel = boost::make_shared<RoverModel>( model, sdf, destination_pos );
-
+    roverModel = boost::make_shared<RoverModel>( model, sdf );
     rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
 
     const string model_file = "./caffe/network/drl_gazebo.prototxt";
