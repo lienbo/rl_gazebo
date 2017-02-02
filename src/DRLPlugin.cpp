@@ -126,7 +126,7 @@ void DRLPlugin::trainAlgorithm()
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
         gzmsg << "Reseting model to initial position." << endl;
-        roverModel->resetModel( initialPos, destinationPos );
+        roverModel->resetModel();
     }
 
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
@@ -140,7 +140,7 @@ void DRLPlugin::trainAlgorithm()
                 gzmsg << "Model reached terminal state !!!" << endl;
                 const float good_reward = 10000;
                 rlAgent->updateQValues( good_reward );
-                roverModel->resetModel( initialPos, destinationPos );
+                roverModel->resetModel();
             }
 
             cv::Mat input_image = cv::Mat( roverModel->getImageHeight(),
@@ -195,7 +195,7 @@ void DRLPlugin::testAlgorithm()
         if( image_data ){
             if( roverModel->isTerminalState() ){
                 gzmsg << "Model reached terminal state !!!" << endl;
-                roverModel->resetModel( initialPos, destinationPos );
+                roverModel->resetModel();
             }
 
             cv::Mat input_image = cv::Mat( roverModel->getImageHeight(),

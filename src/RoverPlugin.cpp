@@ -10,17 +10,17 @@ RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
 {
     actionInterval.Set(1,0);
 
+    destinationPos.push_back( math::Vector3(0, 0, 0.1) );
+
     // Forward and backward
-//    initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(4, 0, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(-2, 0, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
 
     // Turn left and right
-    initialPos.push_back( math::Pose(-2, -2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(-2, 2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(6, -2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(6, 2, .12, 0, 0, 0) );
-
-    destinationPos.push_back( math::Vector3(2, 0, 0.1) );
+    initialPos.push_back( math::Pose(-4, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-4, 2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
 }
 
 
@@ -36,8 +36,9 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
     loadParameters( sdfPtr );
 
     roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
-    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
+    roverModel->setOriginAndDestination( initialPos, destinationPos );
 
+    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
     rlAgent->loadPolicy();
 
     // onUpdate is called each simulation step.
@@ -50,7 +51,7 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
     timeMark = worldPtr->GetSimTime();
 
     // Apply first action
-    roverModel->resetModel( initialPos, destinationPos );
+    roverModel->resetModel();
     firstAction();
 }
 
@@ -141,7 +142,7 @@ void RoverPlugin::trainAlgorithm()
         const float bad_reward = -100;
         rlAgent->updateQValues( bad_reward );
         // Reset gazebo model to initial position
-        roverModel->resetModel( initialPos, destinationPos );
+        roverModel->resetModel();
         firstAction();
     }
 
@@ -153,14 +154,14 @@ void RoverPlugin::trainAlgorithm()
         // Terminal state
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
-            roverModel->resetModel( initialPos, destinationPos );
+            roverModel->resetModel();
             firstAction();
 
         }else if( roverModel->isDistancing() ){
             // Reset model if it is going in the opposite direction
             // This helps reduce the number of states decreasing the learning time
             gzmsg << "Wrong direction !" << endl;
-            roverModel->resetModel( initialPos, destinationPos );
+            roverModel->resetModel();
             firstAction();
 
         }else{
@@ -198,7 +199,7 @@ void RoverPlugin::testAlgorithm()
     if( elapsed_time >= actionInterval ){
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
-            roverModel->resetModel( initialPos, destinationPos );
+            roverModel->resetModel();
         }
 
         vector<float> observed_state = getState();

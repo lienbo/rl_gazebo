@@ -311,34 +311,28 @@ bool RoverModel::checkCollision()
 }
 
 
+void RoverModel::setOriginAndDestination( const vector<math::Pose> &initial_pos,
+                                          const vector<math::Vector3> &destination_pos )
+{
+    initialPos = initial_pos;
+    destinationPos = destination_pos;
+}
+
+
 void RoverModel::resetModel()
 {
     velocityState = 0;
     steeringState = 0;
 
     modelPtr->Reset();
-    gzmsg << "Reseting model to initial position." << endl;
-    gzmsg << endl;
 
-    lastDistance = getDestinationDistance();
-    distanceCounter = 0;
-}
-
-
-void RoverModel::resetModel( vector<math::Pose> initial_pos, vector<math::Vector3> destination_pos )
-{
-    velocityState = 0;
-    steeringState = 0;
-
-    modelPtr->Reset();
-
-    uniform_int_distribution<int> init_uniform_dist(0, initial_pos.size() - 1);
+    uniform_int_distribution<int> init_uniform_dist(0, initialPos.size() - 1);
     const unsigned new_pose = init_uniform_dist(generator);
-    modelPtr->SetWorldPose( initial_pos[new_pose] );
+    modelPtr->SetWorldPose( initialPos[new_pose] );
 
-    uniform_int_distribution<int> dest_uniform_dist(0, destination_pos.size() - 1);
+    uniform_int_distribution<int> dest_uniform_dist(0, destinationPos.size() - 1);
     const unsigned new_destination = dest_uniform_dist(generator);
-    setPoint = destination_pos[new_destination];
+    setPoint = destinationPos[new_destination];
 
     gzmsg << "Reseting model to initial position." << endl;
     gzmsg << endl;

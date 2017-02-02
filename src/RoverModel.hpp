@@ -22,8 +22,9 @@ namespace gazebo{
         void steeringWheelController();
 
         bool checkCollision();
+        void setOriginAndDestination( const std::vector<math::Pose> &initial_pos,
+                                      const std::vector<math::Vector3> &destination_pos );
         void resetModel();
-        void resetModel( std::vector<math::Pose> initial_pos, std::vector<math::Vector3> destination_pos );
 
         void applyAction(const unsigned &action);
         const float getDestinationDistance() const;
@@ -43,18 +44,22 @@ namespace gazebo{
         const unsigned getNumActions() const;
 
         private:
-        enum Action{ DO_NOTHING, FORWARD, BACKWARD, TURN_RIGHT, TURN_LEFT, NUM_ACTIONS = 5 };
-
         void loadParameters();
         void initializeContacts();
         void initializeCamera();
         void checkParameterName( const std::string &parameter_name );
 
-        const std::string outputDir;
-        math::Vector3 setPoint;
+        enum Action{ DO_NOTHING, FORWARD, BACKWARD, TURN_RIGHT, TURN_LEFT, NUM_ACTIONS = 5 };
+
+        typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
+        ContactContainer contactPtrs;
 
         sdf::ElementPtr sdfFile;
         physics::ModelPtr modelPtr;
+
+        math::Vector3 setPoint;
+        std::vector<math::Pose> initialPos;
+        std::vector<math::Vector3> destinationPos;
 
         physics::LinkPtr chassisLink;
         physics::JointPtr frontLeftJoint, frontRightJoint;
@@ -63,8 +68,7 @@ namespace gazebo{
 
         std::default_random_engine generator;
 
-        typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
-        ContactContainer contactPtrs;
+        const std::string outputDir;
 
         // Angles are in radians. Positive is counterclockwise
         int steeringState;
