@@ -1,0 +1,105 @@
+name: "NFQGazebo"
+
+layer {
+  name: "nfq_gazebo_states"
+  type: "Input"
+  top: "states"
+  input_param{
+    shape{
+      dim: 1
+      dim: 7
+    }
+  }
+  include { 
+    phase: TEST
+  }
+}
+
+layer {
+  name: "nfq_gazebo_states"
+  type: "HDF5Data"
+  top: "states"
+  include { 
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "./caffe/dataset/train_states.txt"
+    batch_size: 100
+  }
+}
+
+layer {
+  name: "nfq_gazebo_policy"
+  type: "HDF5Data"
+  top: "policy"
+  include { 
+    phase: TRAIN
+  }
+  hdf5_data_param {
+    source: "./caffe/dataset/train_policy.txt"
+    batch_size: 100
+  }
+}
+
+
+layer {
+  name: "ip3"
+  type: "InnerProduct"
+  bottom: "states"
+  top: "ip3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 50
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "relu3"
+  type: "ReLU"
+  bottom: "ip3"
+  top: "ip3"
+}
+
+layer {
+  name: "ip4"
+  type: "InnerProduct"
+  bottom: "ip3"
+  top: "output"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 5
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "output"
+  bottom: "policy"
+  top: "loss"
+  include { 
+    phase: TRAIN
+  }
+}
