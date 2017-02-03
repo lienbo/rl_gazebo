@@ -236,6 +236,19 @@ const math::Vector3 RoverModel::getPositionState() const
 }
 
 
+const math::Vector3 RoverModel::getEulerAnglesState() const
+{
+    const float grid_size = 0.3;
+    math::Quaternion rotation = modelPtr->GetWorldPose().rot;
+    math::Vector3 euler_angles;
+    euler_angles.x = round( rotation.GetRoll() / grid_size );
+    euler_angles.y = round( rotation.GetPitch() / grid_size );
+    euler_angles.z = round( rotation.GetYaw() / grid_size );
+
+    return euler_angles;
+}
+
+
 const math::Quaternion RoverModel::getOrientationState() const
 {
     const float grid_size = 0.1;

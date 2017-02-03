@@ -34,6 +34,7 @@ namespace gazebo{
 
         const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;
+        const math::Vector3 getEulerAnglesState() const;
         const math::Quaternion getOrientationState() const;
         const int getVelocityState() const;
         const int getSteeringState() const;

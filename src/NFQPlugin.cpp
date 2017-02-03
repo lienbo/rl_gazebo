@@ -105,16 +105,15 @@ vector<float> NFQPlugin::getState() const
 {
     vector<float> observed_state;
 
-    math::Vector3 distance = roverModel->getDistanceState();
+    const math::Vector3 distance = roverModel->getDistanceState();
     observed_state.push_back( distance.x );
     observed_state.push_back( distance.y );
     observed_state.push_back( distance.z );
 
-    math::Quaternion orientation = roverModel->getOrientationState();
-    observed_state.push_back( orientation.w );
-    // In this dataset the robot wont change x and y
-//    observed_state.push_back( orientation.x );
-//    observed_state.push_back( orientation.y );
+    const math::Vector3 orientation = roverModel->getEulerAnglesState();
+    // In this dataset the robot wont change roll and pitch
+    // observed_state.push_back( orientation.x );
+    // observed_state.push_back( orientation.y );
     observed_state.push_back( orientation.z );
 
     const int velocity = roverModel->getVelocityState();
