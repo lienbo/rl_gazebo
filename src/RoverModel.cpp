@@ -98,11 +98,11 @@ void RoverModel::applyAction(const unsigned &action)
         if( velocityState > - speed_limit )
             velocityState += - 1;
         break;
-    case( Action::TURN_RIGHT ):
+    case( Action::TURN_LEFT ):
         if( steeringState < angle_limit )
             steeringState += 1;
         break;
-    case( Action::TURN_LEFT ):
+    case( Action::TURN_RIGHT ):
         if( steeringState > - angle_limit )
             steeringState += - 1;
         break;
@@ -238,7 +238,7 @@ const math::Vector3 RoverModel::getPositionState() const
 
 const math::Vector3 RoverModel::getEulerAnglesState() const
 {
-    const float grid_size = 0.3;
+    const float grid_size = 0.1;
     math::Quaternion rotation = modelPtr->GetWorldPose().rot;
     math::Vector3 euler_angles;
     euler_angles.x = round( rotation.GetRoll() / grid_size );

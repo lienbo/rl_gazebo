@@ -37,7 +37,7 @@ bool State::compareState( const vector<float> &observed_state )
 }
 
 
-QLearner::QLearner( const unsigned &num_actions ) : alpha(0.2), gamma(0.75),
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.2), gamma(0.4),
         numActions( num_actions ), uniformDist(0,num_actions - 1),
         bernoulliDist(0.10), outputDir("./gazebo/output/policy/")
 {

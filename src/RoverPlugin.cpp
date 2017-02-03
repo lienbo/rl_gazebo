@@ -100,7 +100,7 @@ vector<float> RoverPlugin::getState() const
     const math::Vector3 distance = roverModel->getDistanceState();
     observed_state.push_back( distance.x );
     observed_state.push_back( distance.y );
-    observed_state.push_back( distance.z );
+//    observed_state.push_back( distance.z );
 
     const math::Vector3 orientation = roverModel->getEulerAnglesState();
     // In this dataset the robot wont change roll and pitch

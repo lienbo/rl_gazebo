@@ -74,6 +74,9 @@ if( COMPILE_DRL_PLUGIN )
         ${hdf5_LIBRARIES}
         ${GAZEBO_LIBRARIES})
 
+    install(TARGETS NFQPlugin
+        LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
+
     add_library( DRLPlugin SHARED
         src/DRLPlugin.cpp
         src/CaffeInference.cpp
@@ -89,7 +92,6 @@ if( COMPILE_DRL_PLUGIN )
         ${OpenCV_LIBRARIES}
         ${GAZEBO_LIBRARIES})
 
-    ### Install plugin and models
-    install(TARGETS NFQPlugin DRLPlugin
+    install(TARGETS DRLPlugin
         LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 endif()
