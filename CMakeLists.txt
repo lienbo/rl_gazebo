@@ -60,6 +60,20 @@ if( COMPILE_DRL_PLUGIN )
     pkg_check_modules( hdf5 REQUIRED )
     include_directories( ${hdf5_INCLUDE_DIRS} )
 
+    add_library( NFQPlugin SHARED
+        src/NFQPlugin.cpp
+        src/CaffeInference.cpp
+        src/RoverModel.cpp
+        src/QLearner.cpp )
+
+    target_link_libraries( NFQPlugin
+        ${Caffe_LIBRARIES}
+        ${Boost_LIBRARIES}
+        glog
+        protobuf
+        ${hdf5_LIBRARIES}
+        ${GAZEBO_LIBRARIES})
+
     add_library( DRLPlugin SHARED
         src/DRLPlugin.cpp
         src/CaffeInference.cpp
@@ -76,6 +90,6 @@ if( COMPILE_DRL_PLUGIN )
         ${GAZEBO_LIBRARIES})
 
     ### Install plugin and models
-    install(TARGETS DRLPlugin
+    install(TARGETS NFQPlugin DRLPlugin
         LIBRARY DESTINATION ${GAZEBO_PLUGIN_PATH})
 endif()

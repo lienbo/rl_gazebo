@@ -1,11 +1,11 @@
 #include <boost/make_shared.hpp>
-#include "RoverPlugin.hpp"
+#include "NFQPlugin.hpp"
 
 using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
+NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true)
 {
     actionInterval.Set(1,0);
 
@@ -23,27 +23,21 @@ RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
 }
 
 
-RoverPlugin::~RoverPlugin() {}
+NFQPlugin::~NFQPlugin() {}
 
 
-void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
+void NFQPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 {
     transport::NodePtr node( new transport::Node() );
     node->Init();
     serverControlPub = node->Advertise<msgs::ServerControl>("/gazebo/server/control");
 
-    loadParameters( sdfPtr );
-
-    roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
-    roverModel->setOriginAndDestination( initialPos, destinationPos );
-
-    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
-    rlAgent->loadPolicy();
+    loadParameters( model, sdfPtr );
 
     // onUpdate is called each simulation step.
     // It will be used to publish simulation data (sensors, pose, etc).
     updateConnection = event::Events::ConnectWorldUpdateBegin(
-        boost::bind(&RoverPlugin::onUpdate, this, _1));
+        boost::bind(&NFQPlugin::onUpdate, this, _1));
 
     // World simulation time will be used to synchronize the actions
     worldPtr = model->GetWorld();
@@ -55,7 +49,7 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 }
 
 
-void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
+void NFQPlugin::loadParameters( const physics::ModelPtr &model, const sdf::ElementPtr &sdfPtr )
 {
     if( sdfPtr->HasElement( "mode" ) ){
         string execution_mode = sdfPtr->Get<string>("mode");
@@ -69,10 +63,24 @@ void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
 
     if( sdfPtr->HasElement( "max_steps" ) )
         maxSteps = sdfPtr->Get<unsigned>("max_steps");
+
+    roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
+    roverModel->setOriginAndDestination( initialPos, destinationPos );
+
+    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
+    rlAgent->loadPolicy();
+
+    const string model_file = "./caffe/network/nfq_gazebo.prototxt";
+    string weights_file = "./caffe/models/nfq_gazebo_iter_1000.caffemodel";
+    if( sdfPtr->HasElement( "weights_file" ) ){
+        weights_file = sdfPtr->Get<string>("weights_file");
+    }
+
+    caffeNet = boost::make_shared<CaffeInference>( model_file, weights_file );
 }
 
 
-void RoverPlugin::onUpdate( const common::UpdateInfo &info )
+void NFQPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
     roverModel->steeringWheelController();
@@ -80,7 +88,7 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 }
 
 
-void RoverPlugin::printState( const vector<float> &observed_state ) const
+void NFQPlugin::printState( const vector<float> &observed_state ) const
 {
     vector<float>::const_iterator it;
     stringstream stream;
@@ -93,7 +101,7 @@ void RoverPlugin::printState( const vector<float> &observed_state ) const
 }
 
 
-vector<float> RoverPlugin::getState() const
+vector<float> NFQPlugin::getState() const
 {
     vector<float> observed_state;
 
@@ -123,7 +131,7 @@ vector<float> RoverPlugin::getState() const
 
 // This function doesn't call updateQValues because the initial position doesn't
 // have a last state to update.
-void RoverPlugin::firstAction() const
+void NFQPlugin::firstAction() const
 {
     vector<float> observed_state = getState();
     const unsigned state_index = rlAgent->fetchState( observed_state );
@@ -133,7 +141,7 @@ void RoverPlugin::firstAction() const
 }
 
 
-void RoverPlugin::trainAlgorithm()
+void NFQPlugin::trainAlgorithm()
 {
     bool collision = roverModel->checkCollision();
     if( collision ){
@@ -164,10 +172,13 @@ void RoverPlugin::trainAlgorithm()
             firstAction();
 
         }else{
-            const float reward = roverModel->getReward();
             vector<float> observed_state = getState();
-            const unsigned state_index = rlAgent->fetchState( observed_state );
-//            roverModel->saveImage( state_index );
+            const float *input_state = &observed_state[0];
+
+            vector<float> qvalues = caffeNet->Predict( input_state );
+
+            const float reward = roverModel->getReward();
+            const unsigned state_index = rlAgent->fetchState( observed_state, qvalues );
             rlAgent->updateQValues( reward, state_index );
 
             const unsigned action = rlAgent->chooseAction( state_index );
@@ -192,7 +203,7 @@ void RoverPlugin::trainAlgorithm()
     }
 }
 
-void RoverPlugin::testAlgorithm()
+void NFQPlugin::testAlgorithm()
 {
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
     if( elapsed_time >= actionInterval ){
@@ -200,10 +211,13 @@ void RoverPlugin::testAlgorithm()
             gzmsg << "Model reached terminal state !!!" << endl;
             roverModel->resetModel();
         }
-
         vector<float> observed_state = getState();
-        const unsigned state_index = rlAgent->fetchState( observed_state );
-        const unsigned action = rlAgent->chooseAction( state_index, false );
+        const float *input_state = &observed_state[0];
+
+        vector<float> qvalues = caffeNet->Predict( input_state );
+        vector<float>::iterator qvalues_it = max_element( qvalues.begin(), qvalues.end() );
+        const unsigned action = distance( qvalues.begin(), qvalues_it );
+
         roverModel->applyAction( action );
         gzmsg << "Applying action = " << action << endl;
         gzmsg << endl;

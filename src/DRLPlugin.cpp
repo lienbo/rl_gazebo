@@ -1,4 +1,3 @@
-#include <gazebo/msgs/server_control.pb.h>
 #include <boost/make_shared.hpp>
 #include "DRLPlugin.hpp"
 

@@ -167,6 +167,24 @@ void CaffeInference::feedState( const float *input_state )
 }
 
 
+vector<float> CaffeInference::Predict( const float *input_state )
+{
+    feedState( input_state );
+
+    caffeNet->Forward();
+
+    boost::shared_ptr<Blob<float> > output_blob = caffeNet->blob_by_name( outputBlobName );
+
+    vector<float> output;
+    const float *output_data = output_blob->cpu_data();
+    for(size_t i = 0; i < output_blob->shape(1); ++i){
+        output.push_back( output_data[i] );
+    }
+
+    return output;
+}
+
+
 vector<float> CaffeInference::Predict( cv::Mat input_image, const float *input_state )
 {
     feedImage( input_image );
@@ -174,9 +192,9 @@ vector<float> CaffeInference::Predict( cv::Mat input_image, const float *input_s
 
     caffeNet->Forward();
 
-    vector<float> output;
     boost::shared_ptr<Blob<float> > output_blob = caffeNet->blob_by_name( outputBlobName );
 
+    vector<float> output;
     const float *output_data = output_blob->cpu_data();
     for(size_t i = 0; i < output_blob->shape(1); ++i){
         output.push_back( output_data[i] );

@@ -5,7 +5,6 @@
 
 #include <gazebo/transport/transport.hh>
 #include <gazebo/physics/physics.hh>
-#include <gazebo/sensors/sensors.hh>
 #include <gazebo/common/common.hh>
 
 #include "CaffeInference.hpp"
