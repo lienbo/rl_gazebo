@@ -7,8 +7,6 @@ using namespace gazebo;
 
 NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true)
 {
-    actionInterval.Set(1,0);
-
     destinationPos.push_back( math::Vector3(0, 0, 0.1) );
 
     // Forward and backward
@@ -113,7 +111,7 @@ void NFQPlugin::trainAlgorithm()
     }
 
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
-    if( elapsed_time >= actionInterval ){
+    if( elapsed_time >= roverModel->getActionInterval() ){
         gzmsg << endl;
         gzmsg << "Step = " << numSteps << endl;
 
@@ -166,7 +164,7 @@ void NFQPlugin::trainAlgorithm()
 void NFQPlugin::testAlgorithm()
 {
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
-    if( elapsed_time >= actionInterval ){
+    if( elapsed_time >= roverModel->getActionInterval() ){
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
             roverModel->resetModel();

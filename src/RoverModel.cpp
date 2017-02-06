@@ -20,6 +20,7 @@ RoverModel::RoverModel( physics::ModelPtr model, sdf::ElementPtr sdf ) :
     loadParameters();
     initializeContacts();
     initializeCamera();
+    selectSimulationSpeed();
 }
 
 
@@ -116,8 +117,7 @@ void RoverModel::applyAction(const unsigned &action)
 
 void RoverModel::velocityController() const
 {
-    const float simulation_factor = 2;
-    const float vehicle_velocity = simulation_factor * velocityState;
+    const float vehicle_velocity = simulationFactor * velocityState;
 
     rearRightJoint->SetVelocity( 0, vehicle_velocity );
     rearLeftJoint->SetVelocity( 0, vehicle_velocity );
@@ -146,6 +146,12 @@ void RoverModel::steeringWheelController() const
     }
     frontLeftJoint->SetVelocity( rotation_axis, angular_velocity );
     frontRightJoint->SetVelocity( rotation_axis, angular_velocity );
+}
+
+
+const unsigned RoverModel::getNumActions() const
+{
+    return Action::NUM_ACTIONS;
 }
 
 
@@ -413,6 +419,25 @@ void RoverModel::initializeCamera()
 }
 
 
+void RoverModel::selectSimulationSpeed( const std::string speed )
+{
+    if( speed == "slow" ){
+        actionInterval.Set(1, 0);
+        simulationFactor = 1;
+    }
+
+    if ( speed == "normal" ){
+        actionInterval.Set(0, 500000000);
+        simulationFactor = 2;
+    }
+
+    if ( speed == "fast" ){
+        actionInterval.Set(0, 250000000);
+        simulationFactor = 3;
+    }
+}
+
+
 void RoverModel::saveImage( const unsigned &state_index ) const
 {
     ostringstream image_name;
@@ -437,7 +462,7 @@ const unsigned RoverModel::getImageWidth() const
 }
 
 
-const unsigned RoverModel::getNumActions() const
+common::Time RoverModel::getActionInterval() const
 {
-    return Action::NUM_ACTIONS;
+    return actionInterval;
 }

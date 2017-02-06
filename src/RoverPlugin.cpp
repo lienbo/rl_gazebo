@@ -7,8 +7,6 @@ using namespace gazebo;
 
 RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
 {
-    actionInterval.Set(0, 500000000);
-
     destinationPos.push_back( math::Vector3(0, 0, 0.1) );
 
     // Forward and backward
@@ -105,7 +103,7 @@ void RoverPlugin::trainAlgorithm()
     }
 
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
-    if( elapsed_time >= actionInterval ){
+    if( elapsed_time >= roverModel->getActionInterval() ){
         gzmsg << endl;
         gzmsg << "Step = " << numSteps << endl;
 
@@ -156,7 +154,7 @@ void RoverPlugin::trainAlgorithm()
 void RoverPlugin::testAlgorithm()
 {
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
-    if( elapsed_time >= actionInterval ){
+    if( elapsed_time >= roverModel->getActionInterval() ){
         if( roverModel->isTerminalState() ){
             gzmsg << "Model reached terminal state !!!" << endl;
             roverModel->resetModel();

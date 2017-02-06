@@ -44,7 +44,7 @@ namespace gazebo{
         boost::shared_ptr<CaffeInference> caffeNet;
 
         // Counts the time between the action and its result
-        common::Time actionInterval, timeMark;
+        common::Time timeMark;
         physics::WorldPtr worldPtr;
 
         unsigned maxSteps, numSteps;

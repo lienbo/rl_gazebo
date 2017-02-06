@@ -26,10 +26,15 @@ namespace gazebo{
                                       const std::vector<math::Vector3> &destination_pos );
 
         void applyAction(const unsigned &action);
-        const float getDestinationDistance() const;
-        const float getReward() const;
         const bool isTerminalState();
         const bool isDistancing();
+
+        void endStep();
+        void resetModel();
+
+        const unsigned getNumActions() const;
+        const float getDestinationDistance() const;
+        const float getReward() const;
 
         const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;
@@ -40,20 +45,19 @@ namespace gazebo{
         std::vector<float> getState() const;
         void printState( const std::vector<float> &observed_state ) const;
 
-        void endStep();
-        void resetModel();
-
         void saveImage( const unsigned &state_index ) const;
         const unsigned char* getImage() const;
         const unsigned getImageHeight() const;
         const unsigned getImageWidth() const;
-        const unsigned getNumActions() const;
+
+        common::Time getActionInterval() const;
 
         private:
         void loadParameters();
+        void checkParameterName( const std::string &parameter_name );
         void initializeContacts();
         void initializeCamera();
-        void checkParameterName( const std::string &parameter_name );
+        void selectSimulationSpeed( const std::string speed = "normal");
 
         enum Action{ DO_NOTHING, FORWARD, BACKWARD, TURN_LEFT, TURN_RIGHT, NUM_ACTIONS = 5 };
 
@@ -62,6 +66,7 @@ namespace gazebo{
 
         sdf::ElementPtr sdfFile;
         physics::ModelPtr modelPtr;
+        common::Time actionInterval;
 
         math::Vector3 setPoint;
         std::vector<math::Pose> initialPos;
@@ -83,6 +88,7 @@ namespace gazebo{
         unsigned terminalStateCounter, distanceCounter;
         const float terminalDistance;
         float lastDistance;
+        float simulationFactor;
     };
 }
 #endif

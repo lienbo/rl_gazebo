@@ -12,8 +12,6 @@ using namespace gazebo;
 
 DRLPlugin::DRLPlugin() : numSteps(0), trainNet(true)
 {
-    actionInterval.Set(1,0);
-
     initialPos.push_back( math::Pose(0, 0, .12, 0, 0, 0) );
     initialPos.push_back( math::Pose(0, 4, .12, 0, 0, -1.5708) );
     initialPos.push_back( math::Pose(-5.5, -3.3, .12, 0, 0, 1.5708) );
@@ -89,7 +87,7 @@ void DRLPlugin::trainAlgorithm()
     }
 
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
-    if( elapsedTime >= actionInterval ){
+    if( elapsedTime >= roverModel->getActionInterval() ){
         gzmsg << endl;
         gzmsg << "Step = " << numSteps << endl;
         unsigned char* image_data = const_cast<unsigned char*>(roverModel->getImage());
@@ -148,7 +146,7 @@ void DRLPlugin::trainAlgorithm()
 void DRLPlugin::testAlgorithm()
 {
     common::Time elapsedTime = worldPtr->GetSimTime() - timeMark;
-    if( elapsedTime >= actionInterval ){
+    if( elapsedTime >= roverModel->getActionInterval() ){
 
         // Feed input image to network
         unsigned char* image_data = const_cast<unsigned char*>(roverModel->getImage());

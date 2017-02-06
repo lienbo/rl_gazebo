@@ -30,7 +30,7 @@ namespace gazebo{
         boost::shared_ptr<QLearner> rlAgent;
         boost::shared_ptr<CaffeInference> caffeNet;
         // Counts the time between the action and its result
-        common::Time actionInterval, timeMark;
+        common::Time timeMark;
         physics::WorldPtr worldPtr;
 
         std::vector<math::Pose> initialPos;
