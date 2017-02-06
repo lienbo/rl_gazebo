@@ -337,7 +337,8 @@ void RoverModel::resetModel()
     velocityState = 0;
     steeringState = 0;
 
-    modelPtr->Reset();
+    // Reset whole world to avoid problem with the physics engine
+    modelPtr->GetWorld()->Reset();
 
     uniform_int_distribution<int> init_uniform_dist(0, initialPos.size() - 1);
     const unsigned new_pose = init_uniform_dist(generator);
