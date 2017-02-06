@@ -275,10 +275,52 @@ const int RoverModel::getSteeringState() const
     return steering_state;
 }
 
+
+vector<float> RoverModel::getState() const
+{
+    vector<float> observed_state;
+
+    const math::Vector3 distance = getDistanceState();
+    observed_state.push_back( distance.x );
+    observed_state.push_back( distance.y );
+//    observed_state.push_back( distance.z );
+
+    const math::Vector3 orientation = getEulerAnglesState();
+    // In this dataset the robot wont change roll and pitch
+    // observed_state.push_back( orientation.x );
+    // observed_state.push_back( orientation.y );
+    observed_state.push_back( orientation.z );
+
+    const int velocity = getVelocityState();
+    observed_state.push_back( velocity );
+
+    const int steering = getSteeringState();
+    observed_state.push_back( steering );
+
+    printState( observed_state );
+
+    return observed_state;
+}
+
+
+void RoverModel::printState( const vector<float> &observed_state ) const
+{
+    vector<float>::const_iterator it;
+    stringstream stream;
+    stream << "State = ( ";
+    for(it = observed_state.begin(); it != observed_state.end(); ++it)
+        stream << setprecision(2) << *it << " ";
+    stream << ")";
+
+    gzmsg << stream.str() << endl;
+}
+
+
 void RoverModel::endStep()
 {
     lastDistance = getDestinationDistance();
 }
+
 
 void RoverModel::initializeContacts( )
 {

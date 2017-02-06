@@ -88,51 +88,11 @@ void NFQPlugin::onUpdate( const common::UpdateInfo &info )
 }
 
 
-void NFQPlugin::printState( const vector<float> &observed_state ) const
-{
-    vector<float>::const_iterator it;
-    stringstream stream;
-    stream << "State = ( ";
-    for(it = observed_state.begin(); it != observed_state.end(); ++it)
-        stream << setprecision(2) << *it << " ";
-    stream << ")";
-
-    gzmsg << stream.str() << endl;
-}
-
-
-vector<float> NFQPlugin::getState() const
-{
-    vector<float> observed_state;
-
-    const math::Vector3 distance = roverModel->getDistanceState();
-    observed_state.push_back( distance.x );
-    observed_state.push_back( distance.y );
-//    observed_state.push_back( distance.z );
-
-    const math::Vector3 orientation = roverModel->getEulerAnglesState();
-    // In this dataset the robot wont change roll and pitch
-    // observed_state.push_back( orientation.x );
-    // observed_state.push_back( orientation.y );
-    observed_state.push_back( orientation.z );
-
-    const int velocity = roverModel->getVelocityState();
-    observed_state.push_back( velocity );
-
-    const int steering = roverModel->getSteeringState();
-    observed_state.push_back( steering );
-
-    printState( observed_state );
-
-    return observed_state;
-}
-
-
 // This function doesn't call updateQValues because the initial position doesn't
 // have a last state to update.
 void NFQPlugin::firstAction() const
 {
-    vector<float> observed_state = getState();
+    vector<float> observed_state = roverModel->getState();
     const unsigned state_index = rlAgent->fetchState( observed_state );
     const unsigned action = rlAgent->chooseAction( state_index );
     roverModel->applyAction( action );
@@ -171,7 +131,7 @@ void NFQPlugin::trainAlgorithm()
             firstAction();
 
         }else{
-            vector<float> observed_state = getState();
+            vector<float> observed_state = roverModel->getState();
             const float *input_state = &observed_state[0];
 
             vector<float> qvalues = caffeNet->Predict( input_state );
@@ -211,7 +171,7 @@ void NFQPlugin::testAlgorithm()
             gzmsg << "Model reached terminal state !!!" << endl;
             roverModel->resetModel();
         }
-        vector<float> observed_state = getState();
+        vector<float> observed_state = roverModel->getState();
         const float *input_state = &observed_state[0];
 
         vector<float> qvalues = caffeNet->Predict( input_state );

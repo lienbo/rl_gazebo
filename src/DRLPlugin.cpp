@@ -60,7 +60,7 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     timeMark = worldPtr->GetSimTime();
 
     // Apply first action
-    vector<float> observed_state = getState();
+    vector<float> observed_state = roverModel->getState();
     const unsigned state_index = rlAgent->fetchState( observed_state );
     const unsigned action = rlAgent->chooseAction( state_index, true );
     roverModel->applyAction( action );
@@ -73,46 +73,6 @@ void DRLPlugin::onUpdate( const common::UpdateInfo &info )
     roverModel->velocityController();
     roverModel->steeringWheelController();
     trainNet ? trainAlgorithm() : testAlgorithm();
-}
-
-
-vector<float> DRLPlugin::getState()
-{
-    vector<float> observed_state;
-
-    const math::Vector3 distance = roverModel->getDistanceState();
-    observed_state.push_back( distance.x );
-    observed_state.push_back( distance.y );
-//    observed_state.push_back( distance.z );
-
-    const math::Vector3 orientation = roverModel->getEulerAnglesState();
-    // In this dataset the robot wont change roll and pitch
-    // observed_state.push_back( orientation.x );
-    // observed_state.push_back( orientation.y );
-    observed_state.push_back( orientation.z );
-
-    const int velocity = roverModel->getVelocityState();
-    observed_state.push_back( velocity );
-
-    const int steering = roverModel->getSteeringState();
-    observed_state.push_back( steering );
-
-    printState( observed_state );
-
-    return observed_state;
-}
-
-
-void DRLPlugin::printState( const vector<float> &observed_state )
-{
-    vector<float>::const_iterator it;
-    stringstream stream;
-    stream << "State = ( ";
-    for(it = observed_state.begin(); it != observed_state.end(); ++it)
-        stream << setprecision(2) << *it << " ";
-    stream << ")";
-
-    gzmsg << stream.str() << endl;
 }
 
 
@@ -150,7 +110,7 @@ void DRLPlugin::trainAlgorithm()
             input_image.convertTo(input_image, CV_32FC3);
 
             // Feed input state to network
-            vector<float> observed_state = getState();
+            vector<float> observed_state = roverModel->getState();
             const float *input_state = &observed_state[0];
 
             vector<float> qvalues = caffeNet->Predict( input_image, input_state );
@@ -206,7 +166,7 @@ void DRLPlugin::testAlgorithm()
             input_image.convertTo(input_image, CV_32FC3);
 
             // Feed input state to network
-            vector<float> observed_state = getState();
+            vector<float> observed_state = roverModel->getState();
             const float *input_state = &observed_state[0];
 
             vector<float> qvalues = caffeNet->Predict( input_image, input_state );

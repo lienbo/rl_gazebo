@@ -21,8 +21,6 @@ namespace gazebo{
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdf );
         void onUpdate( const common::UpdateInfo &info );
-        void printState( const std::vector<float> &observed_state );
-        std::vector<float> getState();
         void trainAlgorithm();
         void testAlgorithm();
 

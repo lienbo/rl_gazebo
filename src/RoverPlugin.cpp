@@ -80,51 +80,11 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 }
 
 
-void RoverPlugin::printState( const vector<float> &observed_state ) const
-{
-    vector<float>::const_iterator it;
-    stringstream stream;
-    stream << "State = ( ";
-    for(it = observed_state.begin(); it != observed_state.end(); ++it)
-        stream << setprecision(2) << *it << " ";
-    stream << ")";
-
-    gzmsg << stream.str() << endl;
-}
-
-
-vector<float> RoverPlugin::getState() const
-{
-    vector<float> observed_state;
-
-    const math::Vector3 distance = roverModel->getDistanceState();
-    observed_state.push_back( distance.x );
-    observed_state.push_back( distance.y );
-//    observed_state.push_back( distance.z );
-
-    const math::Vector3 orientation = roverModel->getEulerAnglesState();
-    // In this dataset the robot wont change roll and pitch
-    // observed_state.push_back( orientation.x );
-    // observed_state.push_back( orientation.y );
-    observed_state.push_back( orientation.z );
-
-    const int velocity = roverModel->getVelocityState();
-    observed_state.push_back( velocity );
-
-    const int steering = roverModel->getSteeringState();
-    observed_state.push_back( steering );
-
-    printState( observed_state );
-
-    return observed_state;
-}
-
-
 // This function doesn't call updateQValues because the initial position doesn't
 // have a last state to update.
 void RoverPlugin::firstAction() const
 {
-    vector<float> observed_state = getState();
+    vector<float> observed_state = roverModel->getState();
     const unsigned state_index = rlAgent->fetchState( observed_state );
     const unsigned action = rlAgent->chooseAction( state_index );
     roverModel->applyAction( action );
@@ -164,7 +124,7 @@ void RoverPlugin::trainAlgorithm()
 
         }else{
             const float reward = roverModel->getReward();
-            vector<float> observed_state = getState();
+            vector<float> observed_state = roverModel->getState();
             const unsigned state_index = rlAgent->fetchState( observed_state );
 //            roverModel->saveImage( state_index );
             rlAgent->updateQValues( reward, state_index );
@@ -202,7 +162,7 @@ void RoverPlugin::testAlgorithm()
             roverModel->resetModel();
         }
 
-        vector<float> observed_state = getState();
+        vector<float> observed_state = roverModel->getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
         const unsigned action = rlAgent->chooseAction( state_index, false );
         roverModel->applyAction( action );
