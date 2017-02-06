@@ -166,6 +166,7 @@ void DRLPlugin::trainAlgorithm()
             gzmsg << "Applying action = " << action << endl;
         }
 
+        roverModel->endStep();
         ++numSteps;
         // Terminate simulation after maxStep
         if( numSteps == maxSteps){

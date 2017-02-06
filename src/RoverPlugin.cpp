@@ -174,7 +174,9 @@ void RoverPlugin::trainAlgorithm()
             gzmsg << "Applying action = " << action << endl;
         }
 
+        roverModel->endStep();
         ++numSteps;
+
         // Terminate simulation after maxSteps
         if( numSteps == maxSteps ){
             rlAgent->savePolicy();

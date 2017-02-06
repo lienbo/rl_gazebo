@@ -202,13 +202,12 @@ const bool RoverModel::isDistancing()
     }else{
         distanceCounter = 0;
     }
-    lastDistance = distance;
 
-    bool is_farther = false;
+    bool wrong_direction = false;
     if( distanceCounter >= 7 )
-        is_farther = true;
+        wrong_direction = true;
 
-    return is_farther;
+    return wrong_direction;
 }
 
 
@@ -276,6 +275,10 @@ const int RoverModel::getSteeringState() const
     return steering_state;
 }
 
+void RoverModel::endStep()
+{
+    lastDistance = getDestinationDistance();
+}
 
 void RoverModel::initializeContacts( )
 {

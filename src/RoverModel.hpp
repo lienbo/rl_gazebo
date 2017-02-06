@@ -38,6 +38,9 @@ namespace gazebo{
         const math::Quaternion getOrientationState() const;
         const int getVelocityState() const;
         const int getSteeringState() const;
+
+        void endStep();
+
         void saveImage( const unsigned &state_index ) const;
         const unsigned char* getImage() const;
         const unsigned getImageHeight() const;
