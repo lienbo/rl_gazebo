@@ -124,7 +124,7 @@ void RoverModel::velocityController() const
 }
 
 
-void RoverModel::steeringWheelController()
+void RoverModel::steeringWheelController() const
 {
     // Steering wheel proportional controller.
     // steering_angle is the setpoint in RADIANS
@@ -347,11 +347,11 @@ void RoverModel::initializeContacts( )
 }
 
 
-bool RoverModel::checkCollision()
+bool RoverModel::checkCollision() const
 {
     bool collision = false;
     msgs::Contacts contact_msgs;
-    for(ContactContainer::iterator it = contactPtrs.begin();
+    for(ContactContainer::const_iterator it = contactPtrs.begin();
             it != contactPtrs.end(); ++it){
         contact_msgs = (*it)->Contacts();
         for (unsigned int i = 0; i < contact_msgs.contact_size(); ++i){

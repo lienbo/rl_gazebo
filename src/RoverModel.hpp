@@ -19,12 +19,11 @@ namespace gazebo{
         ~RoverModel();
 
         void velocityController() const;
-        void steeringWheelController();
+        void steeringWheelController() const;
 
-        bool checkCollision();
+        bool checkCollision() const;
         void setOriginAndDestination( const std::vector<math::Pose> &initial_pos,
                                       const std::vector<math::Vector3> &destination_pos );
-        void resetModel();
 
         void applyAction(const unsigned &action);
         const float getDestinationDistance() const;
@@ -42,6 +41,7 @@ namespace gazebo{
         void printState( const std::vector<float> &observed_state ) const;
 
         void endStep();
+        void resetModel();
 
         void saveImage( const unsigned &state_index ) const;
         const unsigned char* getImage() const;
