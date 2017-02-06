@@ -81,6 +81,7 @@ namespace gazebo{
         int velocityState;
 
         unsigned terminalStateCounter, distanceCounter;
+        const float terminalDistance;
         float lastDistance;
     };
 }

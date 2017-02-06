@@ -8,7 +8,8 @@ using namespace gazebo;
 
 RoverModel::RoverModel( physics::ModelPtr model, sdf::ElementPtr sdf ) :
         steeringState(0), velocityState(0), terminalStateCounter(0),
-        outputDir("./gazebo/output/images/"), distanceCounter(0)
+        terminalDistance(0.3),  distanceCounter(0),
+        outputDir("./gazebo/output/images/")
 {
     modelPtr = model;
     sdfFile = sdf;
@@ -166,7 +167,7 @@ const float RoverModel::getReward() const
     float reward = - distance;
 
     // Terminal state reward
-    if( distance < 0.2 ){
+    if( distance < terminalDistance ){
         reward = 100;
     }
 
@@ -178,7 +179,7 @@ const bool RoverModel::isTerminalState()
 {
     const float distance = getDestinationDistance();
 
-    if( distance < 0.2 ){
+    if( distance < terminalDistance ){
         ++terminalStateCounter;
     }else{
         terminalStateCounter = 0;
