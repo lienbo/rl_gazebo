@@ -7,7 +7,7 @@ using namespace gazebo;
 
 RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
 {
-    actionInterval.Set(1,0);
+    actionInterval.Set(0, 500000000);
 
     destinationPos.push_back( math::Vector3(0, 0, 0.1) );
 

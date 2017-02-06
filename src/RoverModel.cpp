@@ -116,7 +116,7 @@ void RoverModel::applyAction(const unsigned &action)
 
 void RoverModel::velocityController() const
 {
-    const float simulation_factor = 1;
+    const float simulation_factor = 2;
     const float vehicle_velocity = simulation_factor * velocityState;
 
     rearRightJoint->SetVelocity( 0, vehicle_velocity );
@@ -134,7 +134,7 @@ void RoverModel::steeringWheelController()
     const float steering_angle = steeringState * angle_rate * one_degree;
     const unsigned int rotation_axis = 0;
     const math::Angle current_angle = frontLeftJoint->GetAngle( rotation_axis );
-    float angular_velocity = 0.15;
+    float angular_velocity = 0.2;
 
     // Apply a velocity to Z axis until the wheel reaches steeringAngle
     if( current_angle >= 0.01 + steering_angle ){
