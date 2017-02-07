@@ -129,7 +129,7 @@ void RoverModel::steeringWheelController() const
     // Steering wheel proportional controller.
     // steering_angle is the setpoint in RADIANS
     // max steering_angle (in degrees) = angle_limit * angle_rate
-    const float angle_rate = 4;
+    const float angle_rate = 3;
     const float one_degree = 0.01745;
     const float steering_angle = steeringState * angle_rate * one_degree;
     const unsigned int rotation_axis = 0;
@@ -161,6 +161,41 @@ const float RoverModel::getDestinationDistance() const
     const float distance = abs_position.Distance( setPoint );
 
     return distance;
+}
+
+
+const float RoverModel::getAngletoDestination() const
+{
+    math::Pose global_pose = modelPtr->GetWorldPose();
+    math::Vector3 abs_position = global_pose.pos;
+    math::Quaternion orientation = global_pose.rot;
+
+    math::Vector3 relative_position = orientation.RotateVectorReverse( abs_position );
+    math::Vector3 destination_vector = setPoint - relative_position;
+
+    destination_vector = destination_vector.Normalize();
+
+    // Angle between to vectors
+    // Angle is positive counter clock wise
+    // Positive -> destination on left side
+    // Negative -> destination on the right
+    // -pi <= angle < +pi
+    float angle_radians = 0;
+    if( destination_vector.x >= 0 ){
+        angle_radians = asin( destination_vector.y );
+    } else {
+        if( destination_vector.y >= 0 ){
+            angle_radians = 3.1416 - asin( destination_vector.y );
+        } else {
+            angle_radians = -3.1416 - asin( destination_vector.y );
+        }
+    }
+
+    const float one_radian = 57.2958;
+    const float angle_degrees = one_radian * angle_radians;
+    gzmsg << "Angle = " << angle_degrees  << endl;
+
+    return angle_degrees;
 }
 
 
@@ -408,17 +443,6 @@ void RoverModel::resetModel()
 }
 
 
-void RoverModel::initializeCamera()
-{
-    // Create images output directory
-    boost::filesystem::path dir( outputDir.c_str() );
-    boost::filesystem::create_directories( dir );
-
-    cameraPtr = dynamic_pointer_cast<sensors::CameraSensor>(sensors::get_sensor("camera_sensor"));
-    cameraPtr->SetActive(true);
-}
-
-
 void RoverModel::selectSimulationSpeed( const std::string speed )
 {
     if( speed == "slow" ){
@@ -435,6 +459,17 @@ void RoverModel::selectSimulationSpeed( const std::string speed )
         actionInterval.Set(0, 250000000);
         simulationFactor = 3;
     }
+}
+
+
+void RoverModel::initializeCamera()
+{
+    // Create images output directory
+    boost::filesystem::path dir( outputDir.c_str() );
+    boost::filesystem::create_directories( dir );
+
+    cameraPtr = dynamic_pointer_cast<sensors::CameraSensor>(sensors::get_sensor("camera_sensor"));
+    cameraPtr->SetActive(true);
 }
 
 

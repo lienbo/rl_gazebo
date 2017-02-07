@@ -33,6 +33,7 @@ namespace gazebo{
         void resetModel();
 
         const unsigned getNumActions() const;
+        const float getAngletoDestination() const;
         const float getDestinationDistance() const;
         const float getReward() const;
 
