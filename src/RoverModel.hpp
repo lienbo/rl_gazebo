@@ -60,7 +60,7 @@ namespace gazebo{
         void initializeCamera();
         void selectSimulationSpeed( const std::string speed = "normal");
 
-        enum Action{ DO_NOTHING, FORWARD, BACKWARD, TURN_LEFT, TURN_RIGHT, NUM_ACTIONS = 5 };
+        enum Action{ DO_NOTHING, INCREASE_SPEED, REDUCE_SPEED, TURN_LEFT, TURN_RIGHT, NUM_ACTIONS = 5 };
 
         typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
         ContactContainer contactPtrs;

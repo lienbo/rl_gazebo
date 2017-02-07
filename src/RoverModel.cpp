@@ -92,11 +92,11 @@ void RoverModel::applyAction(const unsigned &action)
     case( Action::DO_NOTHING ):
         // Do nothing
         break;
-    case( Action::FORWARD ):
+    case( Action::INCREASE_SPEED ):
         if( velocityState < speed_limit )
             velocityState += 1;
         break;
-    case( Action::BACKWARD ):
+    case( Action::REDUCE_SPEED ):
         if( velocityState > - speed_limit )
             velocityState += - 1;
         break;
