@@ -37,9 +37,9 @@ bool State::compareState( const vector<float> &observed_state )
 }
 
 
-QLearner::QLearner( const unsigned &num_actions ) : alpha(0.2), gamma(0.4),
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.4), gamma(0.4),
         numActions( num_actions ), uniformDist(0,num_actions - 1),
-        bernoulliDist(0.10), outputDir("./gazebo/output/policy/")
+        bernoulliDist(0.80), outputDir("./gazebo/output/policy/")
 {
     qlearnerStates.clear();
 }
@@ -123,6 +123,26 @@ const unsigned QLearner::chooseAction( const unsigned &state_index, const bool &
     lastIndex = state_index;
 
     return current_state.action;
+}
+
+
+// Updated a state when an action is selected from an outside agent
+const unsigned QLearner::updateAction( const unsigned &state_index, unsigned action )
+{
+    State &current_state = qlearnerStates[state_index];
+
+    // Bernoulli distribution to change action
+    if( bernoulliDist(generator) ){
+        // Equal (uniform) probability to choose an action
+        action = uniformDist(generator);
+    }
+
+    current_state.action = action;
+    current_state.QValue = current_state.QValues[action];
+
+    lastIndex = state_index;
+
+    return action;
 }
 
 
