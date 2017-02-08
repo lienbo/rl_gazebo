@@ -25,6 +25,7 @@ namespace gazebo{
         void setOriginAndDestination( const std::vector<math::Pose> &initial_pos,
                                       const std::vector<math::Vector3> &destination_pos );
 
+        const unsigned bestAction() const;
         void applyAction(const unsigned &action);
         const bool isTerminalState();
         const bool isDistancing();

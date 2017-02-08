@@ -81,6 +81,71 @@ void RoverModel::checkParameterName( const string &parameter_name )
 }
 
 
+const unsigned RoverModel::bestAction() const
+{
+    const float distance = getDestinationDistance();
+    const float angle = getAngletoDestination();
+
+    gzmsg << "Distance = " << distance << endl;
+    gzmsg << "Angle = " << angle << endl;
+
+
+    unsigned action = Action::INCREASE_SPEED;
+    if( velocityState > 0)
+        action = Action::DO_NOTHING;
+
+    if( abs(distance) <= 0.2 ){
+        action = Action::DO_NOTHING;
+    }
+
+    if(( distance <= 3.5 )&&( abs(angle) < 60 )){
+        const float angle_limit = 15;
+        if( abs(angle) <= angle_limit ){
+            if( steeringState > 0 ){
+                action = Action::TURN_RIGHT;
+            }
+            if( steeringState < 0 ){
+                action = Action::TURN_LEFT;
+            }
+        }
+
+        if(( angle > angle_limit )&&( steeringState < 5 )){
+            action = Action::TURN_LEFT;
+        }
+
+        if(( angle < -angle_limit )&&( steeringState > -5 )){
+            action = Action::TURN_RIGHT;
+        }
+
+        if( velocityState < 0 ){
+            action = Action::INCREASE_SPEED;
+        }
+    }
+
+    // Destination behind the vehicle
+    if( abs(angle) > 90 ){
+        action = Action::REDUCE_SPEED;
+        if ( velocityState < 0 ){
+            action = Action::DO_NOTHING;
+        }
+
+        if(( angle > 0 )&&( steeringState > -5 )){
+            action = Action::TURN_RIGHT;
+        }
+
+        if(( angle < 0 )&&( steeringState < 5 )){
+            action = Action::TURN_LEFT;
+        }
+
+        if( velocityState > 0 ){
+            action = Action::REDUCE_SPEED;
+        }
+    }
+
+    return action;
+}
+
+
 void RoverModel::applyAction(const unsigned &action)
 {
     // The vehicle points to the X axis
