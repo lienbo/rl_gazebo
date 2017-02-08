@@ -201,15 +201,22 @@ const float RoverModel::getAngletoDestination() const
 
 const float RoverModel::getReward() const
 {
-    const float distance = getDestinationDistance();
+//    const float distance = getDestinationDistance();
 //    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
 
-    float reward = - distance;
+//    float reward = - distance;
+
+    // The distance must have 2 decimal places due to precision fluctuations.
+    const float round_distance = round( getDestinationDistance() * 100 ) / 100.0;
+
+    // reward = 0 if model approaching destination, -1 if going away from it
+    const float round_last_distance = round( lastDistance * 100) / 100;
+    float reward = (  round_distance < round_last_distance ) ? 0 : -1;
 
     // Terminal state reward
-    if( distance < terminalDistance ){
-        reward = 100;
+    if( round_distance < terminalDistance ){
+        reward = 10;
     }
 
     return reward;
