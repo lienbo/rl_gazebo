@@ -90,7 +90,7 @@ void RoverPlugin::firstAction() const
         action = roverModel->bestAction();
         action = rlAgent->updateAction( state_index, action );
     }else{
-        action = rlAgent->chooseAction( state_index );
+        action = rlAgent->chooseAction( state_index, false );
     }
 
     roverModel->applyAction( action );
