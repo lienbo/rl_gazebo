@@ -10,14 +10,14 @@ RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
     destinationPos.push_back( math::Vector3(0, 0, 0.1) );
 
     // Forward and backward
-//    initialPos.push_back( math::Pose(-2, 0, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-3, 0, .12, 0, 0, 0) );
 //    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
 
     // Turn left and right
-    initialPos.push_back( math::Pose(-4, -2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(-4, 2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-3, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-3, 2, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(3, -2, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(3, 2, .12, 0, 0, 0) );
 }
 
 
@@ -84,7 +84,15 @@ void RoverPlugin::firstAction() const
 {
     vector<float> observed_state = roverModel->getState();
     const unsigned state_index = rlAgent->fetchState( observed_state );
-    const unsigned action = rlAgent->chooseAction( state_index );
+
+    unsigned action;
+    if(train){
+        action = roverModel->bestAction();
+        action = rlAgent->updateAction( state_index, action );
+    }else{
+        action = rlAgent->chooseAction( state_index );
+    }
+
     roverModel->applyAction( action );
     gzmsg << "Applying action = " << action << endl;
 }
@@ -124,10 +132,11 @@ void RoverPlugin::trainAlgorithm()
             const float reward = roverModel->getReward();
             vector<float> observed_state = roverModel->getState();
             const unsigned state_index = rlAgent->fetchState( observed_state );
-//            roverModel->saveImage( state_index );
             rlAgent->updateQValues( reward, state_index );
 
-            const unsigned action = rlAgent->chooseAction( state_index );
+            unsigned action = roverModel->bestAction();
+            action = rlAgent->updateAction( state_index, action );
+
             roverModel->applyAction( action );
             gzmsg << "Applying action = " << action << endl;
         }
