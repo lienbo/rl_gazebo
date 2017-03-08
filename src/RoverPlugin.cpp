@@ -146,10 +146,12 @@ void RoverPlugin::trainAlgorithm()
 
         // Terminate simulation after maxSteps
         if( numSteps == maxSteps ){
-            rlAgent->savePolicy();
-
             gzmsg << endl;
             gzmsg << "Simulation reached max number of steps." << endl;
+
+            gzmsg << "Saving policy..." << endl;
+            rlAgent->savePolicy( true, false );
+
             gzmsg << "Terminating simulation..." << endl;
             msgs::ServerControl server_msg;
             server_msg.set_stop(true);

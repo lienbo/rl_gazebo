@@ -7,19 +7,20 @@
 using namespace std;
 
 
-State::State( vector<float> qvalues, const vector<float> &state ) : QValue(0), maxQValue(0), action(0)
+// Constructor used when loading policy
+State::State( vector<float> qvalues, const vector<float> &state ) : QValue(0), maxQValue(0), action(0), convergedState( qvalues.size(), true ), convergenceTreshold( 0.8 )
 {
     QValues = qvalues;
     stateValues = state;
 }
 
 
-State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0), maxQValue(0), action(0)
+State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0), maxQValue(0), action(0), convergedState( num_actions, false ), convergenceTreshold( 0.8 )
 {
     // Each state is defined by its state values
     stateValues = observed_state;
     // The number of actions is a finite number
-    QValues.resize(num_actions,0);
+    QValues.resize(num_actions, 0);
 };
 
 
@@ -155,7 +156,14 @@ void QLearner::updateQValues( const float& reward, const unsigned &state_index )
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
     // lastAction points to the qvalue associated with the last action.
-    last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * (qlearnerStates[current_index].maxQValue) - (last_state.QValue) );
+    cout << "qmax = " << qlearnerStates[current_index].maxQValue << endl;
+
+    float learned_value = reward + gamma * (qlearnerStates[current_index].maxQValue);
+    if( last_state.convergenceTreshold > last_state.QValue/learned_value )
+        last_state.convergedState[ last_state.action ] = true;
+
+    float qvalue_increment = alpha * ( learned_value - last_state.QValue );
+    last_state.QValues[ last_state.action ] += qvalue_increment;
 }
 
 
@@ -182,7 +190,7 @@ void QLearner::printQValues( const string &message, const unsigned &current_inde
 }
 
 
-void QLearner::savePolicy( bool standardize )
+void QLearner::savePolicy( bool save_converged, bool standardize )
 {
     // Save a NEW files with qvalues and state.
     // Old files are lost
@@ -191,7 +199,6 @@ void QLearner::savePolicy( bool standardize )
 
     string state_file_name = outputDir + "qlearner_states.txt";
     string policy_file_name = outputDir + "qlearner_policy.txt";
-
 
     if( standardize ){
         float mean = 0;
@@ -223,20 +230,36 @@ void QLearner::savePolicy( bool standardize )
         }
     }
 
-
     ofstream policy_file, state_file;
     policy_file.open( policy_file_name.c_str(), ios::out );
     state_file.open( state_file_name.c_str(), ios::out );
 
-    for(StatesContainer::iterator it = qlearnerStates.begin();
-            it != qlearnerStates.end(); ++it){
-        ostream_iterator<float> qvalue_iterator(policy_file, " ");
-        copy(it->QValues.begin(), it->QValues.end(), qvalue_iterator);
-        policy_file << "\n";
+    if( save_converged ){
+        vector<bool> true_vector( numActions, true  );
+        for(StatesContainer::iterator it = qlearnerStates.begin();
+                it != qlearnerStates.end(); ++it){
+            if( equal( it->convergedState.begin(), it->convergedState.end(), true_vector.begin() ) )
+            {
+                ostream_iterator<float> qvalue_iterator(policy_file, " ");
+                copy(it->QValues.begin(), it->QValues.end(), qvalue_iterator);
+                policy_file << "\n";
 
-        ostream_iterator<float> state_iterator(state_file, " ");
-        copy(it->stateValues.begin(), it->stateValues.end(), state_iterator);
-        state_file << "\n";
+                ostream_iterator<float> state_iterator(state_file, " ");
+                copy(it->stateValues.begin(), it->stateValues.end(), state_iterator);
+                state_file << "\n";
+            }
+        }
+    }else {
+        for(StatesContainer::iterator it = qlearnerStates.begin();
+                it != qlearnerStates.end(); ++it){
+            ostream_iterator<float> qvalue_iterator(policy_file, " ");
+            copy(it->QValues.begin(), it->QValues.end(), qvalue_iterator);
+            policy_file << "\n";
+
+            ostream_iterator<float> state_iterator(state_file, " ");
+            copy(it->stateValues.begin(), it->stateValues.end(), state_iterator);
+            state_file << "\n";
+        }
     }
 
     policy_file.close();

@@ -22,8 +22,15 @@ struct State{
     std::vector<float> stateValues;
     std::vector<float> QValues;
 
+    // This vector inform if there is no significant changes in QValues:
+    // newQValue - Qvalue < convergenceTreshold
+    // convergedState size == num actions == QValues size
+    std::vector<bool> convergedState;
+    float convergenceTreshold;
+
     bool compareState( const std::vector<float> &observed_state );
 };
+
 
 class QLearner{
     public:
@@ -31,6 +38,7 @@ class QLearner{
     ~QLearner();
 
     typedef std::vector<State> StatesContainer;
+
     const unsigned fetchState( const std::vector<float> &observed_state );
     const unsigned fetchState( const std::vector<float> &observed_state, std::vector<float> qvalues );
     const unsigned chooseAction( const unsigned &state_index, const bool &training = true );
@@ -39,7 +47,7 @@ class QLearner{
     void updateQValues( const float& reward );
     void printQValues( const std::string &message, const unsigned &current_index ) const;
     void loadPolicy();
-    void savePolicy( bool standardize = false );
+    void savePolicy( bool save_converged = false, bool standardize = false );
 
     private:
     float alpha, gamma;
