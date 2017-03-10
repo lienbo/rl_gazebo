@@ -23,9 +23,10 @@
             <include>
                 <uri>model://rover</uri>
             </include>
-            <plugin name="RoverPlugin" filename="libRoverPlugin.so">
-                <mode>test</mode>
+            <plugin name="RoverPlugin" filename="libNFQPlugin.so">
+                <mode>train</mode>
                 <max_steps>30000</max_steps>
+                <weights_file>./caffe/models/nfq_gazebo_iter_10000.caffemodel</weights_file>
 
                 <chassis_name>rover::chassis</chassis_name>
                 <front_left_joint>rover::front_left_joint</front_left_joint>

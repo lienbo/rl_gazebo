@@ -7,7 +7,7 @@ layer {
   input_param{
     shape{
       dim: 1
-      dim: 7
+      dim: 4
     }
   }
   include { 
@@ -24,7 +24,7 @@ layer {
   }
   hdf5_data_param {
     source: "./caffe/dataset/train_states.txt"
-    batch_size: 100
+    batch_size: 128
   }
 }
 
@@ -37,7 +37,7 @@ layer {
   }
   hdf5_data_param {
     source: "./caffe/dataset/train_policy.txt"
-    batch_size: 100
+    batch_size: 128
   }
 }
 
@@ -54,7 +54,7 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 50
+    num_output: 200
     weight_filler {
       type: "xavier"
     }
@@ -71,10 +71,71 @@ layer {
   top: "ip3"
 }
 
+
 layer {
   name: "ip4"
   type: "InnerProduct"
   bottom: "ip3"
+  top: "ip4"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 350
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "relu4"
+  type: "ReLU"
+  bottom: "ip4"
+  top: "ip4"
+}
+
+
+layer {
+  name: "ip5"
+  type: "InnerProduct"
+  bottom: "ip4"
+  top: "ip5"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "relu5"
+  type: "ReLU"
+  bottom: "ip5"
+  top: "ip5"
+}
+
+
+layer {
+  name: "ip6"
+  type: "InnerProduct"
+  bottom: "ip5"
   top: "output"
   param {
     lr_mult: 1

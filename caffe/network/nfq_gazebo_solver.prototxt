@@ -1,21 +1,16 @@
-# The train/test net protocol buffer definition
 net: "./caffe/network/nfq_gazebo.prototxt"
 # test_iter: 100
-# test_interval: 20
-# The base learning rate, momentum and the weight decay of the network.
-base_lr: 0.0001
+# test_interval: 1000
+
 momentum: 0.9
 weight_decay: 0.0005
-# The learning rate policy
-lr_policy: "inv"
-gamma: 0.0001
+lr_policy: "step"
+stepsize: 30000
+base_lr: 0.001
+gamma: 0.1
 power: 0.75
-# Display every x iterations
-display: 50
-# The maximum number of iterations
-max_iter: 10000
-# snapshot intermediate results
-snapshot: 500
+display: 500
+max_iter: 50000
+snapshot: 5000
 snapshot_prefix: "./caffe/models/nfq_gazebo"
-# solver mode: CPU or GPU
 solver_mode: GPU
