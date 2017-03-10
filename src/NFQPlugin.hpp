@@ -27,7 +27,7 @@ namespace gazebo{
 
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr );
-        void loadParameters( const physics::ModelPtr &model, const sdf::ElementPtr &sdfPtr );
+        void loadParameters( const sdf::ElementPtr &sdfPtr );
         void onUpdate( const common::UpdateInfo &info );
         void firstAction() const;
         void trainAlgorithm();
