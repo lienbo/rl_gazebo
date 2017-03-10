@@ -123,7 +123,7 @@ const unsigned RoverModel::bestAction() const
     }
 
     // Destination behind the vehicle
-    if( abs(angle) > 90 ){
+    if( abs(angle) > 60 ){
         action = Action::REDUCE_SPEED;
         if ( velocityState < 0 ){
             action = Action::DO_NOTHING;
@@ -279,6 +279,10 @@ const float RoverModel::getReward() const
     const float round_last_distance = round( lastDistance * 100) / 100;
     float reward = (  round_distance < round_last_distance ) ? 0 : -1;
 
+    gzmsg << "lastDistance = " <<  round_last_distance  << endl;
+    gzmsg << "distance = " << round_distance << endl;
+    gzmsg << "reward = " << reward << endl;
+
     // Terminal state reward
     if( round_distance < terminalDistance ){
         reward = 10;
@@ -301,7 +305,7 @@ const bool RoverModel::isTerminalState()
     // isTerminalState will only return true if we have X terminal states in a row
     // This is required to the agent learn to stop when it reaches the terminal state
     bool terminal_state = false;
-    if( terminalStateCounter >= 4 )
+    if( terminalStateCounter >= 10 )
         terminal_state = true;
 
     return terminal_state;
@@ -318,7 +322,7 @@ const bool RoverModel::isDistancing()
     }
 
     bool wrong_direction = false;
-    if( distanceCounter >= 7 )
+    if( distanceCounter >= 20 )
         wrong_direction = true;
 
     return wrong_direction;
@@ -394,16 +398,22 @@ vector<float> RoverModel::getState() const
 {
     vector<float> observed_state;
 
-    const math::Vector3 distance = getDistanceState();
-    observed_state.push_back( distance.x );
-    observed_state.push_back( distance.y );
+    const float distance = getDestinationDistance();
+    observed_state.push_back( round(distance/0.2) );
+
+    const float angle = getAngletoDestination();
+    observed_state.push_back( round(angle/18) );
+
+//    const math::Vector3 distance = getDistanceState();
+//    observed_state.push_back( distance.x );
+//    observed_state.push_back( distance.y );
 //    observed_state.push_back( distance.z );
 
-    const math::Vector3 orientation = getEulerAnglesState();
-    // In this dataset the robot wont change roll and pitch
-    // observed_state.push_back( orientation.x );
-    // observed_state.push_back( orientation.y );
-    observed_state.push_back( orientation.z );
+//    const math::Vector3 orientation = getEulerAnglesState();
+//    In this dataset the robot wont change roll and pitch
+//    observed_state.push_back( orientation.x );
+//    observed_state.push_back( orientation.y );
+//    observed_state.push_back( orientation.z );
 
     const int velocity = getVelocityState();
     observed_state.push_back( velocity );
