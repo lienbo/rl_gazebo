@@ -5,19 +5,33 @@ using namespace std;
 using namespace gazebo;
 
 
-RoverPlugin::RoverPlugin() : numSteps(0), maxSteps(5000), train(true)
+RoverPlugin::RoverPlugin() :
+    numSteps(0), maxSteps(5000),
+    numEpisodes(0), maxEpisodes(2),
+    nearState(0),
+    train(true)
 {
-    destinationPos.push_back( math::Vector3(0, 0, 0.1) );
+    destinationPos.push_back( math::Vector3(0, 0, 0) );
 
-    // Forward and backward
-    initialPos.push_back( math::Pose(-3, 0, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
+    // Forward
+//    initialPos.push_back( math::Pose(-5, -4, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(-4, -3, 0, 0, 0, 0) );
 
-    // Turn left and right
-    initialPos.push_back( math::Pose(-3, -2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(-3, 2, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(3, -2, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(3, 2, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(-3, -2, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(-2, -1, 0, 0, 0, 0) );
+//     initialPos.push_back( math::Pose(-3, 0, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(-2, 1, 0, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-3, 2, 0, 0, 0, 0) );
+
+//    initialPos.push_back( math::Pose(-4, 3, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(-5, 4, 0, 0, 0, 0) );
+
+    // Backward
+//    initialPos.push_back( math::Pose(3, -2, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(2, -1, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(3, 0, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(2, 1, 0, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(3, 2, 0, 0, 0, 0) );
 }
 
 
@@ -67,6 +81,9 @@ void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
 
     if( sdfPtr->HasElement( "max_steps" ) )
         maxSteps = sdfPtr->Get<unsigned>("max_steps");
+
+    if( sdfPtr->HasElement( "max_episodes" ) )
+        maxEpisodes = sdfPtr->Get<unsigned>("max_episodes");
 }
 
 
@@ -88,9 +105,11 @@ void RoverPlugin::firstAction() const
     unsigned action;
     if(train){
         action = roverModel->bestAction();
-        action = rlAgent->updateAction( state_index, action );
+        const float initial_epsilon = 0.7; // Final epsilon is zero
+        const float epsilon = initial_epsilon*(1.0 - ( round(10. * numSteps/maxSteps) /10. ));
+        action = rlAgent->updateAction( state_index, action, epsilon);
     }else{
-        action = rlAgent->chooseAction( state_index, false );
+        action = rlAgent->selectAction( state_index );
     }
 
     roverModel->applyAction( action );
@@ -113,7 +132,7 @@ void RoverPlugin::trainAlgorithm()
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
     if( elapsed_time >= roverModel->getActionInterval() ){
         gzmsg << endl;
-        gzmsg << "Step = " << numSteps << endl;
+        gzmsg << "Episode-step = " << numEpisodes << "-" << numSteps << endl;
 
         // Terminal state
         if( roverModel->isTerminalState() ){
@@ -135,7 +154,10 @@ void RoverPlugin::trainAlgorithm()
             rlAgent->updateQValues( reward, state_index );
 
             unsigned action = roverModel->bestAction();
-            action = rlAgent->updateAction( state_index, action );
+            const float initial_epsilon = 0.7; // Final epsilon is zero
+            const float epsilon = initial_epsilon*(1.0 - ( round(10. * numSteps/maxSteps) /10. ));
+            gzmsg << "Epsilon = " << epsilon << endl;
+            action = rlAgent->updateAction( state_index, action, epsilon );
 
             roverModel->applyAction( action );
             gzmsg << "Applying action = " << action << endl;
@@ -144,10 +166,15 @@ void RoverPlugin::trainAlgorithm()
         roverModel->endStep();
         ++numSteps;
 
-        // Terminate simulation after maxSteps
         if( numSteps == maxSteps ){
+            numSteps = 0;
+            ++numEpisodes;
+        }
+
+        // Terminate simulation after maxEpisodes
+        if( numEpisodes == maxEpisodes ){
             gzmsg << endl;
-            gzmsg << "Simulation reached max number of steps." << endl;
+            gzmsg << "Simulation reached max number of episodes." << endl;
 
             gzmsg << "Saving policy..." << endl;
             rlAgent->savePolicy( true, false );
@@ -173,7 +200,7 @@ void RoverPlugin::testAlgorithm()
 
         vector<float> observed_state = roverModel->getState();
         const unsigned state_index = rlAgent->fetchState( observed_state );
-        const unsigned action = rlAgent->chooseAction( state_index, false );
+        const unsigned action = rlAgent->selectAction( state_index );
         roverModel->applyAction( action );
         gzmsg << "Applying action = " << action << endl;
         gzmsg << endl;
