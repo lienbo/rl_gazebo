@@ -8,13 +8,13 @@ using namespace gazebo;
 
 RoverModel::RoverModel( physics::ModelPtr model, sdf::ElementPtr sdf ) :
         steeringState(0), velocityState(0), terminalStateCounter(0),
-        terminalDistance(0.3),  distanceCounter(0),
+        terminalDistance(0.1),  distanceCounter(0),
         outputDir("./gazebo/output/images/")
 {
     modelPtr = model;
     sdfFile = sdf;
 
-    setPoint.Set(2, 0, 0.1);
+    setPoint.Set(0, 0, 0);
     lastDistance = getDestinationDistance();
 
     loadParameters();
@@ -86,60 +86,52 @@ const unsigned RoverModel::bestAction() const
     const float distance = getDestinationDistance();
     const float angle = getAngletoDestination();
 
-    gzmsg << "Distance = " << distance << endl;
-    gzmsg << "Angle = " << angle << endl;
-
-
+    // Default value => go forward
     unsigned action = Action::INCREASE_SPEED;
     if( velocityState > 0)
         action = Action::DO_NOTHING;
 
-    if( abs(distance) <= 0.2 ){
-        action = Action::DO_NOTHING;
-    }
-
-    if(( distance <= 3.5 )&&( abs(angle) < 60 )){
-        const float angle_limit = 15;
-        if( abs(angle) <= angle_limit ){
-            if( steeringState > 0 ){
-                action = Action::TURN_RIGHT;
-            }
-            if( steeringState < 0 ){
-                action = Action::TURN_LEFT;
-            }
-        }
-
-        if(( angle > angle_limit )&&( steeringState < 5 )){
-            action = Action::TURN_LEFT;
-        }
-
-        if(( angle < -angle_limit )&&( steeringState > -5 )){
+    // Center steering wheel
+    const float angle_limit = 15;
+    if( abs(angle) <= angle_limit ){
+        if( steeringState > 0 ){
             action = Action::TURN_RIGHT;
         }
-
-        if( velocityState < 0 ){
-            action = Action::INCREASE_SPEED;
+        if( steeringState < 0 ){
+            action = Action::TURN_LEFT;
         }
+    }
+
+    // Turn steering wheel towards destination
+    if(( angle > angle_limit )&&( steeringState < 5 )){
+        action = Action::TURN_LEFT;
+    }
+    if(( angle < -angle_limit )&&( steeringState > -5 )){
+        action = Action::TURN_RIGHT;
     }
 
     // Destination behind the vehicle
     if( abs(angle) > 60 ){
-        action = Action::REDUCE_SPEED;
+        action = Action::DECREASE_SPEED;
         if ( velocityState < 0 ){
             action = Action::DO_NOTHING;
         }
-
         if(( angle > 0 )&&( steeringState > -5 )){
             action = Action::TURN_RIGHT;
         }
-
         if(( angle < 0 )&&( steeringState < 5 )){
             action = Action::TURN_LEFT;
         }
+    }
 
-        if( velocityState > 0 ){
-            action = Action::REDUCE_SPEED;
-        }
+    // Rover in terminal state
+    if( abs(distance) <= terminalDistance ){
+        if( velocityState == 0)
+            action = Action::DO_NOTHING;
+        if( velocityState < 0)
+            action = Action::INCREASE_SPEED;
+        if( velocityState > 0)
+            action = Action::DECREASE_SPEED;
     }
 
     return action;
@@ -161,7 +153,7 @@ void RoverModel::applyAction(const unsigned &action)
         if( velocityState < speed_limit )
             velocityState += 1;
         break;
-    case( Action::REDUCE_SPEED ):
+    case( Action::DECREASE_SPEED ):
         if( velocityState > - speed_limit )
             velocityState += - 1;
         break;
@@ -258,7 +250,6 @@ const float RoverModel::getAngletoDestination() const
 
     const float one_radian = 57.2958;
     const float angle_degrees = one_radian * angle_radians;
-    gzmsg << "Angle = " << angle_degrees  << endl;
 
     return angle_degrees;
 }
@@ -270,23 +261,24 @@ const float RoverModel::getReward() const
 //    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
 //    reward = - distance / ( distance + 4);
 
-//    float reward = - distance;
+    const float current_distance = floor( getDestinationDistance() * 10 ) / 10;
+    float reward = - current_distance;
 
-    // The distance must have 2 decimal places due to precision fluctuations.
-    const float round_distance = round( getDestinationDistance() * 100 ) / 100.0;
+//    // The distance must have 2 decimal places due to precision fluctuations.
+//    const float current_distance = floor( getDestinationDistance() * 100 ) / 100;
 
-    // reward = 0 if model approaching destination, -1 if going away from it
-    const float round_last_distance = round( lastDistance * 100) / 100;
-    float reward = (  round_distance < round_last_distance ) ? 0 : -1;
-
-    gzmsg << "lastDistance = " <<  round_last_distance  << endl;
-    gzmsg << "distance = " << round_distance << endl;
-    gzmsg << "reward = " << reward << endl;
+//    // reward = 0 if model is approaching destination, -1 if going away from it
+//    const float floor_last_distance = floor(lastDistance * 100) / 100;
+//    float reward = (  current_distance < floor_last_distance ) ? 0 : -1;
 
     // Terminal state reward
-    if( round_distance < terminalDistance ){
+    if( current_distance < terminalDistance ){
         reward = 10;
     }
+
+//    gzmsg << "lastDistance = " <<  round_last_distance  << endl;
+    gzmsg << "distance = " << current_distance << endl;
+    gzmsg << "reward = " << reward << endl;
 
     return reward;
 }
@@ -322,7 +314,7 @@ const bool RoverModel::isDistancing()
     }
 
     bool wrong_direction = false;
-    if( distanceCounter >= 20 )
+    if( distanceCounter >= 12 )
         wrong_direction = true;
 
     return wrong_direction;
@@ -397,46 +389,52 @@ const int RoverModel::getSteeringState() const
 vector<float> RoverModel::getState() const
 {
     vector<float> observed_state;
+    vector<string> state_names;
 
+	// distance < 0.1 => state = 0
+    // 0.1 < distance < 0.3  =>> state = 1
+    // 0.3 < distance < 0.5  =>> state = 2
+    state_names.push_back("distance");
     const float distance = getDestinationDistance();
-    observed_state.push_back( round(distance/0.2) );
+    observed_state.push_back( floor((distance + 0.1)/0.2) );
 
+    state_names.push_back("angle");
     const float angle = getAngletoDestination();
     observed_state.push_back( round(angle/18) );
 
+//    state_names.push_back("distance");
 //    const math::Vector3 distance = getDistanceState();
 //    observed_state.push_back( distance.x );
 //    observed_state.push_back( distance.y );
 //    observed_state.push_back( distance.z );
 
+//    state_names.push_back("orientation");
 //    const math::Vector3 orientation = getEulerAnglesState();
 //    In this dataset the robot wont change roll and pitch
 //    observed_state.push_back( orientation.x );
 //    observed_state.push_back( orientation.y );
 //    observed_state.push_back( orientation.z );
 
+    state_names.push_back("vel");
     const int velocity = getVelocityState();
     observed_state.push_back( velocity );
 
+    state_names.push_back("steering");
     const int steering = getSteeringState();
     observed_state.push_back( steering );
 
-    printState( observed_state );
+    printState( observed_state, state_names );
 
     return observed_state;
 }
 
 
-void RoverModel::printState( const vector<float> &observed_state ) const
+void RoverModel::printState( const vector<float> &observed_state, const vector<string> &state_names ) const
 {
     vector<float>::const_iterator it;
-    stringstream stream;
-    stream << "State = ( ";
-    for(it = observed_state.begin(); it != observed_state.end(); ++it)
-        stream << setprecision(2) << *it << " ";
-    stream << ")";
-
-    gzmsg << stream.str() << endl;
+    gzmsg << "State:" << endl;
+    for( size_t i = 0; i != observed_state.size(); ++i )
+        gzmsg << '\t' << state_names.at(i) << " = " << observed_state.at(i) << endl;
 }
 
 

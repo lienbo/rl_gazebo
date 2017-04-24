@@ -11,13 +11,16 @@ NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true)
 
     // Forward and backward
     initialPos.push_back( math::Pose(-2, 0, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
 
     // Turn left and right
     initialPos.push_back( math::Pose(-4, -2, .12, 0, 0, 0) );
     initialPos.push_back( math::Pose(-4, 2, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
-//    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-6, -1, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-6, 1, .12, 0, 0, 0) );
+
+    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
 }
 
 

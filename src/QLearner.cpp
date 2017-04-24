@@ -8,14 +8,18 @@ using namespace std;
 
 
 // Constructor used when loading policy
-State::State( vector<float> qvalues, const vector<float> &state ) : QValue(0), maxQValue(0), action(0), convergedState( qvalues.size(), true ), convergenceTreshold( 0.8 )
+State::State( vector<float> qvalues, const vector<float> &state ) : QValue(0),
+        maxQValue(0), action(0), convergedState( qvalues.size(), true ),
+        convergenceTreshold( 0.6 )
 {
     QValues = qvalues;
     stateValues = state;
 }
 
 
-State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0), maxQValue(0), action(0), convergedState( num_actions, false ), convergenceTreshold( 0.8 )
+State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0),
+        maxQValue(0), action(0), convergedState( num_actions, false ),
+        convergenceTreshold( 0.6 )
 {
     // Each state is defined by its state values
     stateValues = observed_state;
@@ -37,10 +41,11 @@ bool State::compareState( const vector<float> &observed_state )
     return equal_states;
 }
 
-
-QLearner::QLearner( const unsigned &num_actions ) : alpha(0.25), gamma(0.4),
+// alpha = learning rate
+// gama = discount factor
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.4), gamma(0.9),
         numActions( num_actions ), uniformDist(0,num_actions - 1),
-        bernoulliDist(0.20), outputDir("./gazebo/output/policy/")
+        outputDir("./gazebo/output/policy/")
 {
     qlearnerStates.clear();
 }
@@ -108,17 +113,17 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state, vector
 }
 
 
-const unsigned QLearner::chooseAction( const unsigned &state_index, const bool &training )
+const unsigned QLearner::chooseAction( const unsigned &state_index, const float &probability )
 {
     State &current_state = qlearnerStates[state_index];
-    if( training ){
-        // Bernoulli distribution to change action
-        if( bernoulliDist(generator) ){
-            // Equal (uniform) probability to choose an action
-            const unsigned action = uniformDist(generator);
-            current_state.action = action;
-            current_state.QValue = current_state.QValues[action];
-        }
+
+    bernoulli_distribution bernoulli( probability );
+    // Bernoulli distribution to change action
+    if( bernoulli(generator) ){
+        // Equal (uniform) probability to choose an action
+        const unsigned action = uniformDist(generator);
+        current_state.action = action;
+        current_state.QValue = current_state.QValues[action];
     }
 
     lastIndex = state_index;
@@ -127,17 +132,29 @@ const unsigned QLearner::chooseAction( const unsigned &state_index, const bool &
 }
 
 
-// Updated a state when an action is selected from an external agent
-const unsigned QLearner::updateAction( const unsigned &state_index, unsigned action )
+const unsigned QLearner::selectAction( const unsigned &state_index )
 {
     State &current_state = qlearnerStates[state_index];
+    lastIndex = state_index;
 
+    printQValues( "QValues = ", state_index );
+
+    return current_state.action;
+}
+
+
+// Updated a state when an action is selected from an external agent
+const unsigned QLearner::updateAction( const unsigned &state_index,
+        unsigned action, const float &probability )
+{
+    bernoulli_distribution bernoulli( probability );
     // Bernoulli distribution to change action
-    if( bernoulliDist(generator) ){
+    if( bernoulli(generator) ){
         // Equal (uniform) probability to choose an action
         action = uniformDist(generator);
     }
 
+    State &current_state = qlearnerStates[state_index];
     current_state.action = action;
     current_state.QValue = current_state.QValues[action];
 
@@ -147,23 +164,30 @@ const unsigned QLearner::updateAction( const unsigned &state_index, unsigned act
 }
 
 
-// reward is related to the transition from last state to the current state
+// Reward is related to the transition from last state to the current state
+// Only the last state is updated
 void QLearner::updateQValues( const float& reward, const unsigned &state_index )
 {
+    printQValues( "Old QValues = ", lastIndex );
+
+
     const unsigned current_index = state_index;
     State &last_state = qlearnerStates[lastIndex];
 
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
     // lastAction points to the qvalue associated with the last action.
-    cout << "qmax = " << qlearnerStates[current_index].maxQValue << endl;
+//    cout << "qmax = " << qlearnerStates[current_index].maxQValue << endl;
 
     float learned_value = reward + gamma * (qlearnerStates[current_index].maxQValue);
-    if( last_state.convergenceTreshold > last_state.QValue/learned_value )
-        last_state.convergedState[ last_state.action ] = true;
+//    if( last_state.convergenceTreshold > last_state.QValue/learned_value )
+    last_state.convergedState[ last_state.action ] = true;
 
     float qvalue_increment = alpha * ( learned_value - last_state.QValue );
     last_state.QValues[ last_state.action ] += qvalue_increment;
+
+
+    printQValues( "New QValues = ", lastIndex );
 }
 
 
@@ -180,13 +204,17 @@ void QLearner::updateQValues( const float& reward )
 
 void QLearner::printQValues( const string &message, const unsigned &current_index ) const
 {
-    const vector<float> &current_qvalues = qlearnerStates[ current_index ].QValues;
+    vector<float> qvalues = qlearnerStates[ current_index ].QValues;
     cout << message;
-    for(vector<float>::const_iterator it = current_qvalues.begin();
-            it != current_qvalues.end(); ++it ){
+    for(vector<float>::const_iterator it = qvalues.begin();
+            it != qvalues.end(); ++it ){
         cout << " " << *it;
     }
     cout << endl;
+
+    vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
+    cout << "Max qvalues = " << *action_it << endl;
+    cout << "action = " <<  distance( qvalues.begin(), action_it ) << endl;
 }
 
 

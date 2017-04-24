@@ -41,8 +41,9 @@ class QLearner{
 
     const unsigned fetchState( const std::vector<float> &observed_state );
     const unsigned fetchState( const std::vector<float> &observed_state, std::vector<float> qvalues );
-    const unsigned chooseAction( const unsigned &state_index, const bool &training = true );
-    const unsigned updateAction( const unsigned &state_index, unsigned action );
+    const unsigned chooseAction( const unsigned &state_index, const float &probability = 0.3 );
+    const unsigned selectAction( const unsigned &state_index );
+    const unsigned updateAction( const unsigned &state_index, unsigned action, const float &probability = 0.3 );
     void updateQValues( const float& reward, const unsigned &state_index);
     void updateQValues( const float& reward );
     void printQValues( const std::string &message, const unsigned &current_index ) const;
@@ -55,7 +56,6 @@ class QLearner{
     unsigned lastIndex;
     std::default_random_engine generator;
     std::uniform_int_distribution<int> uniformDist;
-    std::bernoulli_distribution bernoulliDist;
     std::string outputDir;
 
     // There may be an infinity number of states, thus states must be stored in dynamic vectors

@@ -45,7 +45,8 @@ namespace gazebo{
         const int getVelocityState() const;
         const int getSteeringState() const;
         std::vector<float> getState() const;
-        void printState( const std::vector<float> &observed_state ) const;
+        void printState( const std::vector<float> &observed_state,
+                         const std::vector<std::string> &state_names ) const;
 
         void saveImage( const unsigned &state_index ) const;
         const unsigned char* getImage() const;
@@ -61,7 +62,7 @@ namespace gazebo{
         void initializeCamera();
         void selectSimulationSpeed( const std::string speed = "normal");
 
-        enum Action{ DO_NOTHING, INCREASE_SPEED, REDUCE_SPEED, TURN_LEFT, TURN_RIGHT, NUM_ACTIONS = 5 };
+        enum Action{ DO_NOTHING, INCREASE_SPEED, DECREASE_SPEED, TURN_LEFT, TURN_RIGHT, NUM_ACTIONS = 5 };
 
         typedef std::vector<sensors::ContactSensorPtr> ContactContainer;
         ContactContainer contactPtrs;

@@ -4,7 +4,7 @@ layer {
   name: "drl_gazebo_images"
   type: "Input"
   top: "images"
-  include { 
+  include {
     phase: TEST
   }
   input_param{
@@ -19,7 +19,7 @@ layer {
     scale: 0.00390625
     mirror: true
     crop_size: 240
-    mean_file: "./caffe/dataset/drl_gazebo_mean.binaryproto"
+    mean_file: "./caffe/drl_gazebo_mean.binaryproto"
   }
 }
 
@@ -43,18 +43,18 @@ layer {
   name: "drl_gazebo_images"
   type: "Data"
   top: "images"
-  include { 
+  include {
     phase: TRAIN
   }
   transform_param {
     scale: 0.00390625
     mirror: true
     crop_size: 240
-    mean_file: "./caffe/dataset/drl_gazebo_mean.binaryproto"
+    mean_file: "./caffe/drl_gazebo_mean.binaryproto"
   }
   data_param {
     source: "./caffe/dataset/train_lmdb"
-    batch_size: 64
+    batch_size: 100
     backend: LMDB
   }
 }
@@ -68,7 +68,7 @@ layer {
   }
   hdf5_data_param {
     source: "./caffe/dataset/train_states.txt"
-    batch_size: 64
+    batch_size: 100
   }
 }
 
@@ -81,7 +81,7 @@ layer {
   }
   hdf5_data_param {
     source: "./caffe/dataset/train_policy.txt"
-    batch_size: 64
+    batch_size: 100
   }
 }
 
@@ -308,7 +308,7 @@ layer {
     lr_mult: 2
   }
   inner_product_param {
-    num_output: 6
+    num_output: 5
     weight_filler {
       type: "xavier"
     }

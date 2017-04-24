@@ -7,8 +7,8 @@
         </scene>
 
         <physics type="ode">
-<!--            <real_time_update_rate>1000</real_time_update_rate>-->
-            <real_time_update_rate>0</real_time_update_rate>
+            <real_time_update_rate>1000</real_time_update_rate>
+<!--            <real_time_update_rate>0</real_time_update_rate> -->
         </physics>
 
         <include>
@@ -25,7 +25,8 @@
             </include>
             <plugin name="RoverPlugin" filename="libRoverPlugin.so">
                 <mode>test</mode>
-                <max_steps>30000</max_steps>
+                <max_episodes>10</max_episodes>
+                <max_steps>25000</max_steps>
 
                 <chassis_name>rover::chassis</chassis_name>
                 <front_left_joint>rover::front_left_joint</front_left_joint>
