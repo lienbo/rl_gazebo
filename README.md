@@ -1,5 +1,7 @@
-This package contains a Gazebo model plugin intended to simulate an autonomous vehicle.
+Readme
+------
 
+This package contains Gazebo plugins intended to simulate autonomous vehicles.
 
 Test the simulation:
 1 - Edit the gazebo world file:
@@ -10,7 +12,6 @@ Test the simulation:
     gazebo gazebo/worlds/rover.world --verbose
     gazebo gazebo/worlds/nfq_rover.world --verbose
     gazebo gazebo/worlds/drl_rover.world --verbose
-
 
 
 Train the simulation:
@@ -40,6 +41,10 @@ Train the simulation:
     gazebo gazebo/worlds/drl_rover.world --verbose
 
 
+Acknowledgement
+---------------
 
+This work is part of Thomio Watanabe PhD project funded by grant: #2015/26293-0, São Paulo Research Foundation (FAPESP).  
+"Opinions, hypothesis and conclusions or recommendations expressed herein are the author(s) responsibility and do not necessarily conform with FAPESP vision."  
 
-Copyright © 2016 Thomio Watanabe
+Copyright © 2017 Thomio Watanabe
