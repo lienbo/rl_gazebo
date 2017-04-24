@@ -8,8 +8,8 @@ link_directories( ${GAZEBO_LIBRARY_DIRS} )
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 find_package(Boost REQUIRED COMPONENTS system filesystem )
-link_directories( ${Boost_LIBRARY_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
+link_directories( ${Boost_LIBRARY_DIRS} )
 
 add_library(RoverPlugin SHARED
     src/RoverPlugin.cpp
