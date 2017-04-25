@@ -63,7 +63,7 @@ if( COMPILE_DRL_PLUGIN )
 
     add_library( NFQPlugin SHARED
         src/NFQPlugin.cpp
-        src/CaffeInference.cpp
+        src/CaffeRL.cpp
         src/RoverModel.cpp
         src/QLearner.cpp
         src/State.cpp)
@@ -81,7 +81,7 @@ if( COMPILE_DRL_PLUGIN )
 
     add_library( DRLPlugin SHARED
         src/DRLPlugin.cpp
-        src/CaffeInference.cpp
+        src/CaffeRL.cpp
         src/RoverModel.cpp
         src/QLearner.cpp
         src/State.cpp)

@@ -14,9 +14,8 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 
-#include "CaffeInference.hpp"
+#include "CaffeRL.hpp"
 #include "RoverModel.hpp"
-#include "QLearner.hpp"
 
 
 namespace gazebo{
@@ -29,7 +28,7 @@ namespace gazebo{
         void Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr );
         void loadParameters( const sdf::ElementPtr &sdfPtr );
         void onUpdate( const common::UpdateInfo &info );
-        void firstAction() const;
+        void firstAction();
         void trainAlgorithm();
         void testAlgorithm();
 
@@ -40,12 +39,15 @@ namespace gazebo{
         event::ConnectionPtr updateConnection;
 
         boost::shared_ptr<RoverModel> roverModel;
-        boost::shared_ptr<QLearner> rlAgent;
-        boost::shared_ptr<CaffeInference> caffeNet;
+        boost::shared_ptr<CaffeRL> caffeNet;
 
         // Counts the time between the action and its result
         common::Time timeMark;
         physics::WorldPtr worldPtr;
+
+        unsigned previousAction;
+        std::vector<float> previousState;
+        std::vector<Transition> transitionsContainer;
 
         unsigned maxSteps, numSteps;
         bool train;
