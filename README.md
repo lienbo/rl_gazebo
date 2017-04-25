@@ -7,7 +7,7 @@ This package contains Gazebo plugins intended to simulate reinforcement learning
 Installation
 ------------
 
-Supported system: Ubuntu 16.04 Xenial
+Supported system: Ubuntu 16.04 Xenial  
 Basic dependencies: cmake, gcc, opencv
 
 1. Install Gazebo 7
@@ -15,7 +15,7 @@ Basic dependencies: cmake, gcc, opencv
     sudo apt-get install libgazebo7-dev
     ```
 
-2. Compile and install caffe on the system
+2. Compile and install [caffe](http://caffe.berkeleyvision.org/installation.html) on the system
     ```bash
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
     ```
