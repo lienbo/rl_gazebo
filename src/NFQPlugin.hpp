@@ -49,6 +49,8 @@ namespace gazebo{
         std::vector<float> previousState;
         std::vector<Transition> transitionsContainer;
 
+        const std::string outputDir;
+        unsigned memoryReplaySize, batchSize;
         unsigned maxSteps, numSteps;
         bool train;
     };

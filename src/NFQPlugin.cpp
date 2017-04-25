@@ -1,12 +1,15 @@
 #include <boost/make_shared.hpp>
+#include <boost/filesystem.hpp>
 #include "NFQPlugin.hpp"
+#include <random>
 
 using namespace std;
 using namespace gazebo;
 
 
 
-NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true)
+NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true),
+        memoryReplaySize(128), batchSize(32), outputDir("./caffe/models/")
 {
     destinationPos.push_back( math::Vector3(0, 0, 0.1) );
 
@@ -19,6 +22,9 @@ NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true)
 //    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
 //    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
 //    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
+
+    boost::filesystem::path dir( outputDir.c_str() );
+    boost::filesystem::create_directories( dir );
 }
 
 
@@ -165,6 +171,26 @@ void NFQPlugin::trainAlgorithm()
 
             previousAction = action;
             previousState = observed_state;
+        }
+
+        if( transitionsContainer.size() >= memoryReplaySize )
+        {
+            default_random_engine generator;
+            unsigned slice = round( memoryReplaySize/batchSize );
+            uniform_int_distribution<int> uniformDist( slice );
+            vector<Transition> transitions_container;
+            // Randomly selects and remove transition samples
+            for( size_t i = 0; i < batchSize; ++i ){
+                unsigned transition_it = uniformDist(generator);
+                transition_it += i * slice;
+                transitions_container.push_back( transitionsContainer[ transition_it ] );
+                gzmsg << "transition_it = " << transition_it << endl;
+            }
+
+            caffeNet->Train( transitions_container );
+
+            // Delete transitions
+            transitionsContainer.clear();
         }
 
         roverModel->endStep();
