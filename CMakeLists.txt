@@ -14,7 +14,8 @@ link_directories( ${Boost_LIBRARY_DIRS} )
 add_library(RoverPlugin SHARED
     src/RoverPlugin.cpp
     src/RoverModel.cpp
-    src/QLearner.cpp)
+    src/QLearner.cpp
+    src/State.cpp)
 
 target_link_libraries(RoverPlugin
     ${GAZEBO_LIBRARIES}
@@ -64,7 +65,8 @@ if( COMPILE_DRL_PLUGIN )
         src/NFQPlugin.cpp
         src/CaffeInference.cpp
         src/RoverModel.cpp
-        src/QLearner.cpp )
+        src/QLearner.cpp
+        src/State.cpp)
 
     target_link_libraries( NFQPlugin
         ${Caffe_LIBRARIES}
@@ -81,7 +83,8 @@ if( COMPILE_DRL_PLUGIN )
         src/DRLPlugin.cpp
         src/CaffeInference.cpp
         src/RoverModel.cpp
-        src/QLearner.cpp )
+        src/QLearner.cpp
+        src/State.cpp)
 
     target_link_libraries( DRLPlugin
         ${Caffe_LIBRARIES}
