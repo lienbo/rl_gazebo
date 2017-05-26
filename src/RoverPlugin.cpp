@@ -7,7 +7,7 @@ using namespace gazebo;
 
 RoverPlugin::RoverPlugin() :
     numSteps(0), maxSteps(5000),
-    numEpisodes(0), maxEpisodes(2),
+    numTrials(0), maxTrials(2),
     nearState(0),
     train(true)
 {
@@ -82,8 +82,8 @@ void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
     if( sdfPtr->HasElement( "max_steps" ) )
         maxSteps = sdfPtr->Get<unsigned>("max_steps");
 
-    if( sdfPtr->HasElement( "max_episodes" ) )
-        maxEpisodes = sdfPtr->Get<unsigned>("max_episodes");
+    if( sdfPtr->HasElement( "max_trials" ) )
+        maxTrials = sdfPtr->Get<unsigned>("max_trials");
 }
 
 
@@ -132,7 +132,7 @@ void RoverPlugin::trainAlgorithm()
     common::Time elapsed_time = worldPtr->GetSimTime() - timeMark;
     if( elapsed_time >= roverModel->getActionInterval() ){
         gzmsg << endl;
-        gzmsg << "Episode-step = " << numEpisodes << "-" << numSteps << endl;
+        gzmsg << "Trial-step = " << numTrials << "-" << numSteps << endl;
 
         // Terminal state
         if( roverModel->isTerminalState() ){
@@ -168,13 +168,13 @@ void RoverPlugin::trainAlgorithm()
 
         if( numSteps == maxSteps ){
             numSteps = 0;
-            ++numEpisodes;
+            ++numTrials;
         }
 
-        // Terminate simulation after maxEpisodes
-        if( numEpisodes == maxEpisodes ){
+        // Terminate simulation after maxTrials
+        if( numTrials == maxTrials ){
             gzmsg << endl;
-            gzmsg << "Simulation reached max number of episodes." << endl;
+            gzmsg << "Simulation reached max number of trials." << endl;
 
             gzmsg << "Saving policy..." << endl;
             rlAgent->savePolicy( true, false );

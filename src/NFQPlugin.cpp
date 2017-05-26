@@ -1,26 +1,30 @@
 #include <boost/make_shared.hpp>
+#include <boost/filesystem.hpp>
 #include "NFQPlugin.hpp"
+#include <random>
 
 using namespace std;
 using namespace gazebo;
 
 
-NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true)
+
+NFQPlugin::NFQPlugin() : numSteps(0), maxSteps(5000), train(true),
+        memoryReplaySize(128), batchSize(32), outputDir("./caffe/models/")
 {
     destinationPos.push_back( math::Vector3(0, 0, 0.1) );
 
-    // Forward and backward
-    initialPos.push_back( math::Pose(-2, 0, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
-
-    // Turn left and right
     initialPos.push_back( math::Pose(-4, -2, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-3, -1, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-2, 0, .12, 0, 0, 0) );
+    initialPos.push_back( math::Pose(-3, 1, .12, 0, 0, 0) );
     initialPos.push_back( math::Pose(-4, 2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(-6, -1, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(-6, 1, .12, 0, 0, 0) );
 
-    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
-    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(4, -2, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(2, 0, .12, 0, 0, 0) );
+//    initialPos.push_back( math::Pose(4, 2, .12, 0, 0, 0) );
+
+    boost::filesystem::path dir( outputDir.c_str() );
+    boost::filesystem::create_directories( dir );
 }
 
 
@@ -37,9 +41,6 @@ void NFQPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 
     roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
     roverModel->setOriginAndDestination( initialPos, destinationPos );
-
-    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
-    rlAgent->loadPolicy();
 
     // onUpdate is called each simulation step.
     // It will be used to publish simulation data (sensors, pose, etc).
@@ -58,6 +59,12 @@ void NFQPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 
 void NFQPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
 {
+    const string model_file = "./caffe/network/nfq_gazebo.prototxt";
+    string weights_file = "./caffe/models/nfq_gazebo_iter_1000.caffemodel";
+    if( sdfPtr->HasElement( "weights_file" ) ){
+        weights_file = sdfPtr->Get<string>("weights_file");
+    }
+
     if( sdfPtr->HasElement( "mode" ) ){
         string execution_mode = sdfPtr->Get<string>("mode");
         if( execution_mode == "train" ){
@@ -68,17 +75,15 @@ void NFQPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
         }
     }
 
-    if( sdfPtr->HasElement( "max_steps" ) )
-        maxSteps = sdfPtr->Get<unsigned>("max_steps");
-
-
-    const string model_file = "./caffe/network/nfq_gazebo.prototxt";
-    string weights_file = "./caffe/models/nfq_gazebo_iter_1000.caffemodel";
-    if( sdfPtr->HasElement( "weights_file" ) ){
-        weights_file = sdfPtr->Get<string>("weights_file");
+    string solver_file = "./caffe/network/nfq_gazebo_solver.prototxt";
+    if( sdfPtr->HasElement( "solver_file" ) ){
+        solver_file = sdfPtr->Get<string>("solver_file");
     }
 
-    caffeNet = boost::make_shared<CaffeInference>( model_file, weights_file );
+    caffeNet = boost::make_shared<CaffeRL>( model_file, weights_file, solver_file );
+
+    if( sdfPtr->HasElement( "max_steps" ) )
+        maxSteps = sdfPtr->Get<unsigned>("max_steps");
 }
 
 
@@ -92,15 +97,13 @@ void NFQPlugin::onUpdate( const common::UpdateInfo &info )
 
 // This function doesn't call updateQValues because the initial position doesn't
 // have a last state to update.
-void NFQPlugin::firstAction() const
+void NFQPlugin::firstAction()
 {
     vector<float> observed_state = roverModel->getState();
-    const unsigned state_index = rlAgent->fetchState( observed_state );
 
     unsigned action;
     if(train){
         action = roverModel->bestAction();
-        action = rlAgent->updateAction( state_index, action );
     }else{
         const float *input_state = &observed_state[0];
         vector<float> qvalues = caffeNet->Predict( input_state );
@@ -110,16 +113,25 @@ void NFQPlugin::firstAction() const
 
     roverModel->applyAction( action );
     gzmsg << "Applying action = " << action << endl;
+    previousAction = action;
+    previousState = observed_state;
 }
 
 
+// Using memory replay, the training has two phases:
+// 1 - Run the neural network inference thus moving the robot for n steps
+// 2 - Train the NN model
 void NFQPlugin::trainAlgorithm()
 {
     bool collision = roverModel->checkCollision();
     if( collision ){
         gzmsg << "Collision detected !!!" << endl;
         const float bad_reward = -100;
-        rlAgent->updateQValues( bad_reward );
+
+        vector<float> observed_state = roverModel->getState();
+        Transition transition( previousState, previousAction, bad_reward, observed_state );
+        transitionsContainer.push_back( transition );
+
         // Reset gazebo model to initial position
         roverModel->resetModel();
         firstAction();
@@ -145,19 +157,40 @@ void NFQPlugin::trainAlgorithm()
 
         }else{
             vector<float> observed_state = roverModel->getState();
+
             const float *input_state = &observed_state[0];
-
-            vector<float> qvalues = caffeNet->Predict( input_state );
-
             const float reward = roverModel->getReward();
-            const unsigned state_index = rlAgent->fetchState( observed_state, qvalues );
-            rlAgent->updateQValues( reward, state_index );
 
+            Transition transition( previousState, previousAction, reward, observed_state );
+            transitionsContainer.push_back( transition );
+
+//            vector<float> qvalues = caffeNet->Predict( input_state );
             unsigned action = roverModel->bestAction();
-            action = rlAgent->updateAction( state_index, action );
-
             roverModel->applyAction( action );
             gzmsg << "Applying action = " << action << endl;
+
+            previousAction = action;
+            previousState = observed_state;
+        }
+
+        if( transitionsContainer.size() >= memoryReplaySize )
+        {
+            default_random_engine generator;
+            unsigned slice = round( memoryReplaySize/batchSize );
+            uniform_int_distribution<int> uniformDist( slice );
+            vector<Transition> transitions_container;
+            // Randomly selects and remove transition samples
+            for( size_t i = 0; i < batchSize; ++i ){
+                unsigned transition_it = uniformDist(generator);
+                transition_it += i * slice;
+                transitions_container.push_back( transitionsContainer[ transition_it ] );
+                gzmsg << "transition_it = " << transition_it << endl;
+            }
+
+            caffeNet->Train( transitions_container );
+
+            // Delete transitions
+            transitionsContainer.clear();
         }
 
         roverModel->endStep();
@@ -167,9 +200,6 @@ void NFQPlugin::trainAlgorithm()
         if( numSteps == maxSteps ){
             gzmsg << endl;
             gzmsg << "Simulation reached max number of steps." << endl;
-
-            gzmsg << "Saving policy..." << endl;
-            rlAgent->savePolicy( true, false );
 
             gzmsg << "Terminating simulation..." << endl;
             msgs::ServerControl server_msg;

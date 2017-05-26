@@ -37,7 +37,7 @@ namespace gazebo{
         physics::WorldPtr worldPtr;
 
         unsigned maxSteps, numSteps;
-        unsigned maxEpisodes, numEpisodes;
+        unsigned maxTrials, numTrials;
         unsigned nearState;
         bool train;
     };

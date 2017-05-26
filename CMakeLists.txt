@@ -8,13 +8,14 @@ link_directories( ${GAZEBO_LIBRARY_DIRS} )
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 find_package(Boost REQUIRED COMPONENTS system filesystem )
-link_directories( ${Boost_LIBRARY_DIRS} )
 include_directories( ${Boost_INCLUDE_DIRS} )
+link_directories( ${Boost_LIBRARY_DIRS} )
 
 add_library(RoverPlugin SHARED
     src/RoverPlugin.cpp
     src/RoverModel.cpp
-    src/QLearner.cpp)
+    src/QLearner.cpp
+    src/State.cpp)
 
 target_link_libraries(RoverPlugin
     ${GAZEBO_LIBRARIES}
@@ -62,9 +63,10 @@ if( COMPILE_DRL_PLUGIN )
 
     add_library( NFQPlugin SHARED
         src/NFQPlugin.cpp
-        src/CaffeInference.cpp
+        src/CaffeRL.cpp
         src/RoverModel.cpp
-        src/QLearner.cpp )
+        src/QLearner.cpp
+        src/State.cpp)
 
     target_link_libraries( NFQPlugin
         ${Caffe_LIBRARIES}
@@ -79,9 +81,10 @@ if( COMPILE_DRL_PLUGIN )
 
     add_library( DRLPlugin SHARED
         src/DRLPlugin.cpp
-        src/CaffeInference.cpp
+        src/CaffeRL.cpp
         src/RoverModel.cpp
-        src/QLearner.cpp )
+        src/QLearner.cpp
+        src/State.cpp)
 
     target_link_libraries( DRLPlugin
         ${Caffe_LIBRARIES}

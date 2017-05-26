@@ -1,4 +1,4 @@
-#include "CaffeInference.hpp"
+#include "CaffeRL.hpp"
 #include <caffe/util/hdf5.hpp>
 
 #include <opencv/cv.hpp>
@@ -19,12 +19,23 @@ using caffe::TransformationParameter;
 using caffe::DataTransformer;
 
 
+Transition::Transition( const vector<float> &observed_state, const unsigned &action,
+                        const float &reward, const vector<float> &next_state)
+{
+    this->observedState = observed_state;
+    this->action = action;
+    this->reward = reward;
+    this->nextState = next_state;
+}
 
-CaffeInference::CaffeInference( const string &model_file, const string &trained_file ) : imageBlobName("images"), stateBlobName("states"), outputBlobName("output")
+
+
+CaffeRL::CaffeRL( const string &model_file, const string &trained_file, const string &solver_file):
+    imageBlobName("images"), stateBlobName("states"), outputBlobName("output")
 {
     Caffe::set_mode(Caffe::GPU);
 
-    caffeNet.reset(new Net<float>( model_file, caffe::TEST ));
+    caffeNet.reset(new Net<float>( model_file, caffe::TRAIN ));
     if( access( trained_file.c_str(), F_OK ) != -1  ){
         cout << "Loading network weights..." << endl;
         caffeNet->CopyTrainedLayersFrom(trained_file);
@@ -32,11 +43,15 @@ CaffeInference::CaffeInference( const string &model_file, const string &trained_
 
     printNetInfo();
 
-    getTransformation( model_file );
+//    getTransformation( model_file );
+
+    caffe::SolverParameter solver_param;
+    caffe::ReadProtoFromTextFileOrDie( solver_file, &solver_param);
+    caffeSolver.reset(caffe::SolverRegistry<float>::CreateSolver(solver_param));
 }
 
 
-void CaffeInference::getTransformation( const string &model_file )
+void CaffeRL::getTransformation( const string &model_file )
 {
     NetParameter net_parameters;
     ReadProtoFromTextFileOrDie( model_file, &net_parameters );
@@ -48,7 +63,7 @@ void CaffeInference::getTransformation( const string &model_file )
 }
 
 
-void CaffeInference::printNetInfo() const
+void CaffeRL::printNetInfo() const
 {
     cout << "\nNetwork name = " << caffeNet->name() << endl;
     cout << endl;
@@ -67,7 +82,7 @@ void CaffeInference::printNetInfo() const
 }
 
 
-void CaffeInference::printBlobInfo( const string &blob_name, const Blob<float> &blob ) const
+void CaffeRL::printBlobInfo( const string &blob_name, const Blob<float> &blob ) const
 {
     cout << "\nBlob: " << blob_name << endl;
     cout << "Number of axis = " << blob.num_axes() << endl;
@@ -79,7 +94,7 @@ void CaffeInference::printBlobInfo( const string &blob_name, const Blob<float> &
 }
 
 
-void CaffeInference::printImageInfo( const Mat &image ) const
+void CaffeRL::printImageInfo( const Mat &image ) const
 {
     cout << "Depth = " << image.depth() << endl;
     cout << "Number of channels = " << image.channels() << endl;
@@ -88,7 +103,7 @@ void CaffeInference::printImageInfo( const Mat &image ) const
 }
 
 
-void CaffeInference::printBlobContent( const string &blob_name, Blob<float> &blob ) const
+void CaffeRL::printBlobContent( const string &blob_name, Blob<float> &blob ) const
 {
     cout << "Blob: " << blob_name << endl;
     const float *content = blob.cpu_data();
@@ -97,7 +112,7 @@ void CaffeInference::printBlobContent( const string &blob_name, Blob<float> &blo
 }
 
 
-void CaffeInference::printOutput() const
+void CaffeRL::printOutput() const
 {
     boost::shared_ptr<Blob<float> > output_blob = caffeNet->blob_by_name( outputBlobName );
     printBlobInfo("output_blob", *output_blob);
@@ -109,7 +124,7 @@ void CaffeInference::printOutput() const
 }
 
 
-void CaffeInference::loadImageMean( const string &mean_file )
+void CaffeRL::loadImageMean( const string &mean_file )
 {
     BlobProto mean_proto;
     ReadProtoFromBinaryFileOrDie( mean_file.c_str(), &mean_proto );
@@ -123,7 +138,7 @@ void CaffeInference::loadImageMean( const string &mean_file )
 
 // loadHDF5 can be used to open the train_policy and train_states files
 // Load hdf5 files with ONLY ONE GROUP
-void CaffeInference::loadHDF5( const string &file_name, unsigned max_dim )
+void CaffeRL::loadHDF5( const string &file_name, unsigned max_dim )
 {
     Blob<float> output_blob;
 
@@ -141,7 +156,7 @@ void CaffeInference::loadHDF5( const string &file_name, unsigned max_dim )
 }
 
 
-void CaffeInference::feedImage( const Mat &input_image )
+void CaffeRL::feedImage( const Mat &input_image )
 {
     // Crop image and remove mean
     boost::shared_ptr<Blob<float> > image_blob = caffeNet->blob_by_name( imageBlobName );
@@ -153,7 +168,7 @@ void CaffeInference::feedImage( const Mat &input_image )
 }
 
 
-void CaffeInference::feedState( const float *input_state )
+void CaffeRL::feedState( const float *input_state )
 {
     const unsigned num_elements = sizeof( input_state ) / sizeof( input_state[0] );
 
@@ -167,7 +182,7 @@ void CaffeInference::feedState( const float *input_state )
 }
 
 
-vector<float> CaffeInference::Predict( const float *input_state )
+vector<float> CaffeRL::Predict( const float *input_state )
 {
     feedState( input_state );
 
@@ -185,7 +200,7 @@ vector<float> CaffeInference::Predict( const float *input_state )
 }
 
 
-vector<float> CaffeInference::Predict( cv::Mat input_image, const float *input_state )
+vector<float> CaffeRL::Predict( cv::Mat input_image, const float *input_state )
 {
     feedImage( input_image );
     feedState( input_state );

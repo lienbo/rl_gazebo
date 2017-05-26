@@ -40,7 +40,13 @@ void DRLPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdf )
     if( sdf->HasElement( "weights_file" ) ){
         weights_file = sdf->Get<string>("weights_file");
     }
-    caffeNet = boost::make_shared<CaffeInference>( model_file, weights_file );
+
+    string solver_file = "./caffe/network/nfq_gazebo_solver.prototxt";
+    if( sdf->HasElement( "solver_file" ) ){
+        solver_file = sdf->Get<string>("solver_file");
+    }
+
+    caffeNet = boost::make_shared<CaffeRL>( model_file, weights_file, solver_file );
 
     if( sdf->HasElement( "train" ) )
         trainNet = sdf->Get<bool>("train");

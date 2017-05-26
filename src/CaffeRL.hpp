@@ -1,5 +1,5 @@
-#ifndef CAFFE_INFERENCE_HPP_
-#define CAFFE_INFERENCE_HPP_
+#ifndef CAFFE_RL_HPP_
+#define CAFFE_RL_HPP_
 
 // Copyright © 2017 Thomio Watanabe
 // Universidade de Sao Paulo
@@ -13,10 +13,22 @@
 #include <caffe/caffe.hpp>
 
 
-class CaffeInference{
+struct Transition
+{
+    Transition( const std::vector<float> &observed_state, const unsigned &action,
+                const float &reward, const std::vector<float> &next_state);
+
+    std::vector<float> observedState;
+    unsigned action;
+    float reward;
+    std::vector<float> nextState;
+};
+
+
+class CaffeRL{
     public:
-    CaffeInference( const std::string &model_file,
-                    const std::string &trained_file );
+    CaffeRL( const std::string &model_file, const std::string &trained_file,
+             const std::string &solver_file);
 
     void getTransformation( const std::string &model_file );
 
@@ -33,6 +45,8 @@ class CaffeInference{
 
     private:
     boost::shared_ptr<caffe::Net<float> > caffeNet;
+    boost::shared_ptr<caffe::Solver<float> > caffeSolver;
+
     boost::shared_ptr<caffe::DataTransformer<float> > dataTransformer;
     caffe::Blob<float> imageMean;
     const std::string imageBlobName, stateBlobName, outputBlobName;

@@ -25,7 +25,7 @@
             </include>
             <plugin name="RoverPlugin" filename="libRoverPlugin.so">
                 <mode>test</mode>
-                <max_episodes>10</max_episodes>
+                <max_trials>10</max_trials>
                 <max_steps>25000</max_steps>
 
                 <chassis_name>rover::chassis</chassis_name>
