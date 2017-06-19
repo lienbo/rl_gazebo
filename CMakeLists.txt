@@ -58,9 +58,6 @@ if( COMPILE_DRL_PLUGIN )
     find_package( OpenCV REQUIRED )
     include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-    pkg_check_modules( hdf5 REQUIRED )
-    include_directories( ${hdf5_INCLUDE_DIRS} )
-
     add_library( NFQPlugin SHARED
         src/NFQPlugin.cpp
         src/CaffeRL.cpp
@@ -73,7 +70,6 @@ if( COMPILE_DRL_PLUGIN )
         ${Boost_LIBRARIES}
         glog
         protobuf
-        ${hdf5_LIBRARIES}
         ${GAZEBO_LIBRARIES})
 
     install(TARGETS NFQPlugin
@@ -91,7 +87,6 @@ if( COMPILE_DRL_PLUGIN )
         ${Boost_LIBRARIES}
         glog
         protobuf
-        ${hdf5_LIBRARIES}
         ${OpenCV_LIBRARIES}
         ${GAZEBO_LIBRARIES})
 

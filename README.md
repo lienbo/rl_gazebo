@@ -1,14 +1,12 @@
-Readme
-------
+## Readme
 
-This package contains Gazebo plugins intended to simulate reinforcement learning algorithms in mobile robots.
+Gazebo plugin to simulate reinforcement learning with mobile robots.
 
 
-Installation
-------------
+## Installation
 
 Supported system: Ubuntu 16.04 Xenial  
-Basic dependencies: cmake, gcc, opencv
+Basic dependencies: GCC, CMake, Boost, OpenCV
 
 1. Install Gazebo 7
     ```bash
@@ -28,8 +26,7 @@ Basic dependencies: cmake, gcc, opencv
     ```
 
 
-Testing
--------
+## Testing
 
 1. Edit the gazebo world file in gazebo/worlds/
     * set the mode tag to test
@@ -42,8 +39,7 @@ Testing
     ```
 
 
-Training
---------
+## Training
 
 1. Edit the gazebo world files (rover.world, nfq_rover.world, drl_rover.world):
     * set the mode tag to train
@@ -51,12 +47,11 @@ Training
 
 2. Launch gazebo rover world:
     ```bash
-        gazebo gazebo/worlds/rover.world --verbose
+    gazebo gazebo/worlds/rover.world --verbose
     ```
 
 
-Acknowledgement
----------------
+## Acknowledgement
 
 This work is part of Thomio Watanabe PhD project funded by grant: #2015/26293-0, São Paulo Research Foundation (FAPESP).
 "Opinions, hypothesis and conclusions or recommendations expressed herein are the author(s) responsibility and do not necessarily conform with FAPESP vision."  
