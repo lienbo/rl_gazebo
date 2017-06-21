@@ -107,7 +107,8 @@ void RoverPlugin::firstAction() const
         action = roverModel->bestAction();
         const float initial_epsilon = 0.7; // Final epsilon is zero
         const float epsilon = initial_epsilon*(1.0 - ( round(10. * numSteps/maxSteps) /10. ));
-        action = rlAgent->updateAction( state_index, action, epsilon);
+        action = roverModel->eGreedy( action, epsilon );
+        rlAgent->updateAction( state_index, action );
     }else{
         action = rlAgent->selectAction( state_index );
     }
@@ -157,7 +158,8 @@ void RoverPlugin::trainAlgorithm()
             const float initial_epsilon = 0.7; // Final epsilon is zero
             const float epsilon = initial_epsilon*(1.0 - ( round(10. * numSteps/maxSteps) /10. ));
             gzmsg << "Epsilon = " << epsilon << endl;
-            action = rlAgent->updateAction( state_index, action, epsilon );
+            action = roverModel->eGreedy( action, epsilon );
+            rlAgent->updateAction( state_index, action );
 
             roverModel->applyAction( action );
             gzmsg << "Applying action = " << action << endl;

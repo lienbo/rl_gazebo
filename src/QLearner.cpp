@@ -111,23 +111,13 @@ const unsigned QLearner::selectAction( const unsigned &state_index )
 
 
 // Updated a state when an action is selected from an external agent
-const unsigned QLearner::updateAction( const unsigned &state_index,
-        unsigned action, const float &probability )
+void QLearner::updateAction( const unsigned &state_index, unsigned action )
 {
-    bernoulli_distribution bernoulli( probability );
-    // Bernoulli distribution to change action
-    if( bernoulli(generator) ){
-        // Equal (uniform) probability to choose an action
-        action = uniformDist(generator);
-    }
-
     State &current_state = qlearnerStates[state_index];
     current_state.action = action;
     current_state.QValue = current_state.QValues[action];
 
     lastIndex = state_index;
-
-    return action;
 }
 
 

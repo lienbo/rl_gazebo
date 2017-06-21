@@ -22,7 +22,7 @@ class QLearner{
     const unsigned fetchState( const std::vector<float> &observed_state, std::vector<float> qvalues );
     const unsigned chooseAction( const unsigned &state_index, const float &probability = 0.3 );
     const unsigned selectAction( const unsigned &state_index );
-    const unsigned updateAction( const unsigned &state_index, unsigned action, const float &probability = 0.3 );
+    void updateAction( const unsigned &state_index, unsigned action );
     void updateQValues( const float& reward, const unsigned &state_index);
     void updateQValues( const float& reward );
     void printQValues( const std::string &message, const unsigned &current_index ) const;

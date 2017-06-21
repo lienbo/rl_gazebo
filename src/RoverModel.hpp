@@ -26,6 +26,7 @@ namespace gazebo{
                                       const std::vector<math::Vector3> &destination_pos );
 
         const unsigned bestAction() const;
+        const unsigned eGreedy( unsigned &action, const float &probability );
         void applyAction(const unsigned &action);
         const bool isTerminalState();
         const bool isDistancing();
@@ -81,6 +82,7 @@ namespace gazebo{
         sensors::CameraSensorPtr cameraPtr;
 
         std::default_random_engine generator;
+        std::uniform_int_distribution<int> uniformDist;
 
         const std::string outputDir;
 

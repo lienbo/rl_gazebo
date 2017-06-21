@@ -9,6 +9,7 @@ using namespace gazebo;
 RoverModel::RoverModel( physics::ModelPtr model, sdf::ElementPtr sdf ) :
         steeringState(0), velocityState(0), terminalStateCounter(0),
         terminalDistance(0.1),  distanceCounter(0),
+        uniformDist(0, Action::NUM_ACTIONS - 1),
         outputDir("./gazebo/output/images/")
 {
     modelPtr = model;
@@ -134,6 +135,18 @@ const unsigned RoverModel::bestAction() const
             action = Action::DECREASE_SPEED;
     }
 
+    return action;
+}
+
+
+const unsigned RoverModel::eGreedy( unsigned &action, const float &probability )
+{
+    bernoulli_distribution bernoulli( probability );
+    // Bernoulli distribution to change action
+    if( bernoulli(generator) ){
+        // Equal (uniform) probability to choose an action
+        action = uniformDist(generator);
+    }
     return action;
 }
 
