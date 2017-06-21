@@ -399,7 +399,7 @@ const int RoverModel::getSteeringState() const
 }
 
 
-vector<float> RoverModel::getState() const
+vector<float> RoverModel::getState( const bool &discrete_values ) const
 {
     vector<float> observed_state;
     vector<string> state_names;
@@ -408,12 +408,17 @@ vector<float> RoverModel::getState() const
     // 0.1 < distance < 0.3  =>> state = 1
     // 0.3 < distance < 0.5  =>> state = 2
     state_names.push_back("distance");
-    const float distance = getDestinationDistance();
-    observed_state.push_back( floor((distance + 0.1)/0.2) );
-
     state_names.push_back("angle");
+    const float distance = getDestinationDistance();
     const float angle = getAngletoDestination();
-    observed_state.push_back( round(angle/18) );
+
+    if( discrete_values ){
+        observed_state.push_back( floor((distance + 0.1)/0.1) );
+        observed_state.push_back( round(angle/18) );
+    }else{
+        observed_state.push_back( floor((distance * 10)/10) );
+        observed_state.push_back( round(angle) );
+    }
 
 //    state_names.push_back("distance");
 //    const math::Vector3 distance = getDistanceState();

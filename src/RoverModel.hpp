@@ -45,7 +45,7 @@ namespace gazebo{
         const math::Quaternion getOrientationState() const;
         const int getVelocityState() const;
         const int getSteeringState() const;
-        std::vector<float> getState() const;
+        std::vector<float> getState( const bool &discrete_values = true ) const;
         void printState( const std::vector<float> &observed_state,
                          const std::vector<std::string> &state_names ) const;
 
