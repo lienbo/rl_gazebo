@@ -10,6 +10,8 @@
 #include "RoverModel.hpp"
 #include "QLearner.hpp"
 
+#include <random>
+
 
 namespace gazebo{
     class RoverPlugin : public ModelPlugin{
@@ -20,8 +22,9 @@ namespace gazebo{
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr );
         void loadParameters( const sdf::ElementPtr &sdfPtr );
+        unsigned eGreedy( unsigned action, const float &probability );
         void onUpdate( const common::UpdateInfo &info );
-        void firstAction() const;
+        void firstAction();
         void trainAlgorithm();
         void testAlgorithm();
 
@@ -36,6 +39,8 @@ namespace gazebo{
         common::Time timeMark;
         physics::WorldPtr worldPtr;
 
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> uniformDist;
         unsigned maxSteps, numSteps;
         unsigned maxTrials, numTrials;
         unsigned nearState;

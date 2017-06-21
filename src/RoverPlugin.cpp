@@ -46,10 +46,14 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 
     loadParameters( sdfPtr );
 
+    const unsigned num_actions = roverModel->getNumActions();
+    uniform_int_distribution<int> temp_uniform_dist( 0, num_actions - 1 );
+    uniformDist.param( temp_uniform_dist.param() );
+
     roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
     roverModel->setOriginAndDestination( initialPos, destinationPos );
 
-    rlAgent = boost::make_shared<QLearner>( roverModel->getNumActions() );
+    rlAgent = boost::make_shared<QLearner>( num_actions );
     rlAgent->loadPolicy();
 
     // onUpdate is called each simulation step.
@@ -87,6 +91,18 @@ void RoverPlugin::loadParameters( const sdf::ElementPtr &sdfPtr )
 }
 
 
+unsigned RoverPlugin::eGreedy( unsigned action, const float &probability )
+{
+    bernoulli_distribution bernoulli( probability );
+    // Bernoulli distribution to change action
+    if( bernoulli(generator) ){
+        // Equal (uniform) probability to choose an action
+        action = uniformDist(generator);
+    }
+    return action;
+}
+
+
 void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 {
     roverModel->velocityController();
@@ -97,7 +113,7 @@ void RoverPlugin::onUpdate( const common::UpdateInfo &info )
 
 // This function doesn't call updateQValues because the initial position doesn't
 // have a last state to update.
-void RoverPlugin::firstAction() const
+void RoverPlugin::firstAction()
 {
     vector<float> observed_state = roverModel->getState();
     const unsigned state_index = rlAgent->fetchState( observed_state );
@@ -107,7 +123,7 @@ void RoverPlugin::firstAction() const
         action = roverModel->bestAction();
         const float initial_epsilon = 0.7; // Final epsilon is zero
         const float epsilon = initial_epsilon*(1.0 - ( round(10. * numSteps/maxSteps) /10. ));
-        action = roverModel->eGreedy( action, epsilon );
+        action = eGreedy( action, epsilon );
         rlAgent->updateAction( state_index, action );
     }else{
         action = rlAgent->selectAction( state_index );
@@ -158,7 +174,7 @@ void RoverPlugin::trainAlgorithm()
             const float initial_epsilon = 0.7; // Final epsilon is zero
             const float epsilon = initial_epsilon*(1.0 - ( round(10. * numSteps/maxSteps) /10. ));
             gzmsg << "Epsilon = " << epsilon << endl;
-            action = roverModel->eGreedy( action, epsilon );
+            action = eGreedy( action, epsilon );
             rlAgent->updateAction( state_index, action );
 
             roverModel->applyAction( action );
