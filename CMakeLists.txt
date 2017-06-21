@@ -61,9 +61,7 @@ if( COMPILE_DRL_PLUGIN )
     add_library( NFQPlugin SHARED
         src/NFQPlugin.cpp
         src/CaffeRL.cpp
-        src/RoverModel.cpp
-        src/QLearner.cpp
-        src/State.cpp)
+        src/RoverModel.cpp)
 
     target_link_libraries( NFQPlugin
         ${Caffe_LIBRARIES}
@@ -78,9 +76,7 @@ if( COMPILE_DRL_PLUGIN )
     add_library( DRLPlugin SHARED
         src/DRLPlugin.cpp
         src/CaffeRL.cpp
-        src/RoverModel.cpp
-        src/QLearner.cpp
-        src/State.cpp)
+        src/RoverModel.cpp)
 
     target_link_libraries( DRLPlugin
         ${Caffe_LIBRARIES}
