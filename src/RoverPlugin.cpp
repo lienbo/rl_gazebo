@@ -46,12 +46,12 @@ void RoverPlugin::Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr )
 
     loadParameters( sdfPtr );
 
+    roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
+    roverModel->setOriginAndDestination( initialPos, destinationPos );
+
     const unsigned num_actions = roverModel->getNumActions();
     uniform_int_distribution<int> temp_uniform_dist( 0, num_actions - 1 );
     uniformDist.param( temp_uniform_dist.param() );
-
-    roverModel = boost::make_shared<RoverModel>( model, sdfPtr );
-    roverModel->setOriginAndDestination( initialPos, destinationPos );
 
     rlAgent = boost::make_shared<QLearner>( num_actions );
     rlAgent->loadPolicy();
