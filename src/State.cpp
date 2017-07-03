@@ -5,18 +5,18 @@
 using namespace std;
 
 // Constructor used when loading policy
-State::State( vector<float> qvalues, const vector<float> &state ) : QValue(0),
-        maxQValue(0), action(0), convergedState( qvalues.size(), true ),
-        convergenceTreshold( 0.6 )
+State::State( vector<float> qvalues, const vector<float> &observed_state ) :
+        QValue(0), maxQValue(0), action(0),
+        convergedState( qvalues.size(), true ), convergenceTreshold( 0.6 )
 {
+    stateValues = observed_state;
     QValues = qvalues;
-    stateValues = state;
 }
 
 
-State::State( unsigned num_actions, const vector<float> &observed_state ) : QValue(0),
-        maxQValue(0), action(0), convergedState( num_actions, false ),
-        convergenceTreshold( 0.6 )
+State::State( unsigned num_actions, const vector<float> &observed_state ) :
+        QValue(0), maxQValue(0), action(0),
+        convergedState( num_actions, false ), convergenceTreshold( 0.6 )
 {
     // Each state is defined by its state values
     stateValues = observed_state;
