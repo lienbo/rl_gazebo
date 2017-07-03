@@ -11,6 +11,8 @@ RoverPlugin::RoverPlugin() :
     nearState(0),
     train(true)
 {
+    generator.seed(time(0));
+
     destinationPos.push_back( math::Vector3(0, 0, 0) );
 
     // Forward

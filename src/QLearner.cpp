@@ -10,11 +10,12 @@ using namespace std;
 
 // alpha = learning rate
 // gama = discount factor
-QLearner::QLearner( const unsigned &num_actions ) : alpha(0.4), gamma(0.9),
+QLearner::QLearner( const unsigned &num_actions ) : alpha(0.4), gamma(0.8),
         numActions( num_actions ), uniformDist(0,num_actions - 1),
         outputDir("./gazebo/output/policy/")
 {
     qlearnerStates.clear();
+    generator.seed(time(0));
 }
 
 
@@ -28,7 +29,7 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state )
         if( state_it->compareState( observed_state ) ){
             // Found state. Break loop
             break;
-	    }
+        }
     }
 
     // Iterator is equal to qlearnerStates.end() if no state was found
@@ -142,7 +143,6 @@ void QLearner::updateQValues( const float& reward, const unsigned &state_index )
 
     float qvalue_increment = alpha * ( learned_value - last_state.QValue );
     last_state.QValues[ last_state.action ] += qvalue_increment;
-
 
     printQValues( "New QValues = ", lastIndex );
 }
