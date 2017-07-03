@@ -15,7 +15,9 @@ struct State{
     ~State();
 
     unsigned action;
-    float QValue, maxQValue;
+    float QValue;
+    float maxQValue;
+
     std::vector<float> stateValues;
     std::vector<float> QValues;
 
@@ -26,6 +28,7 @@ struct State{
     float convergenceTreshold;
 
     bool compareState( const std::vector<float> &observed_state );
+    void updateMaxQValue();
 };
 
 #endif

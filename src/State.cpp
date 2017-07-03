@@ -11,6 +11,7 @@ State::State( vector<float> qvalues, const vector<float> &observed_state ) :
 {
     stateValues = observed_state;
     QValues = qvalues;
+    updateMaxQValue();
 }
 
 
@@ -36,4 +37,12 @@ bool State::compareState( const vector<float> &observed_state )
     }
 
     return equal_states;
+}
+
+
+void State::updateMaxQValue()
+{
+    // Search for the highest qvalue and update maxQValue
+    vector<float>::iterator action_it = max_element( QValues.begin(), QValues.end() );
+    maxQValue = *action_it;
 }

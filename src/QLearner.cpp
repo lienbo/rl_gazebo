@@ -38,15 +38,6 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state )
         state_it = qlearnerStates.insert( state_it, new_state );
     }
 
-    // The action is the iterator position.
-    // Never change the vector order (sort)
-    State &current_state = *state_it;
-    vector<float> &qvalues = current_state.QValues;
-    vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
-    current_state.action = distance( qvalues.begin(), action_it );
-    current_state.maxQValue = *action_it;
-    current_state.QValue = *action_it;
-
     const unsigned state_index = distance( qlearnerStates.begin(), state_it );
     return state_index;
 }
@@ -64,17 +55,9 @@ const unsigned QLearner::fetchState( const vector<float> &observed_state, vector
 
     // Iterator is equal to qlearnerStates.end() if no state was found
     if( state_it == qlearnerStates.end() ){
-        State new_state( numActions, observed_state );
+        State new_state( qvalues, observed_state );
         state_it = qlearnerStates.insert( state_it, new_state );
-        state_it->QValues = qvalues;
     }
-
-    // The action is the iterator position.
-    // Never change the vector order (sort)
-    vector<float>::iterator action_it = max_element( state_it->QValues.begin(), state_it->QValues.end() );
-    state_it->action = distance( state_it->QValues.begin(), action_it );
-    state_it->maxQValue = *action_it;
-    state_it->QValue = *action_it;
 
     const unsigned state_index = distance( qlearnerStates.begin(), state_it );
     return state_index;
@@ -100,14 +83,17 @@ const unsigned QLearner::chooseAction( const unsigned &state_index, const float 
 }
 
 
+// selectAction() is used for testing (deployment)
 const unsigned QLearner::selectAction( const unsigned &state_index )
 {
     State &current_state = qlearnerStates[state_index];
-    lastIndex = state_index;
+    vector<float> &qvalues = current_state.QValues;
+    vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
+    const unsigned action = distance( qvalues.begin(), action_it );
 
     printQValues( "QValues = ", state_index );
 
-    return current_state.action;
+    return action;
 }
 
 
@@ -128,21 +114,18 @@ void QLearner::updateQValues( const float& reward, const unsigned &state_index )
 {
     printQValues( "Old QValues = ", lastIndex );
 
-
-    const unsigned current_index = state_index;
-    State &last_state = qlearnerStates[lastIndex];
-
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
-    // lastAction points to the qvalue associated with the last action.
-//    cout << "qmax = " << qlearnerStates[current_index].maxQValue << endl;
+    // last_state.action points to the qvalue associated with the last action.
+    State &last_state = qlearnerStates[lastIndex];
 
-    float learned_value = reward + gamma * (qlearnerStates[current_index].maxQValue);
-//    if( last_state.convergenceTreshold > last_state.QValue/learned_value )
-    last_state.convergedState[ last_state.action ] = true;
-
+    float learned_value = reward + gamma * (qlearnerStates[state_index].maxQValue);
     float qvalue_increment = alpha * ( learned_value - last_state.QValue );
     last_state.QValues[ last_state.action ] += qvalue_increment;
+    last_state.updateMaxQValue();
+
+//    if( last_state.convergenceTreshold > last_state.QValue/learned_value )
+    last_state.convergedState[ last_state.action ] = true;
 
     printQValues( "New QValues = ", lastIndex );
 }
@@ -154,8 +137,10 @@ void QLearner::updateQValues( const float& reward )
 
     // This is a modified version of the usual QLearning algorithms.
     // This updates the last QValues state instead of the current one.
-    // lastAction points to the qvalue associated with the last action.
+    // last_state.action points to the qvalue associated with the last action.
+    // Use this function when the next state is undetermined
     last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * ( 0 ) - (last_state.QValue) );
+    last_state.updateMaxQValue();
 }
 
 
@@ -170,8 +155,8 @@ void QLearner::printQValues( const string &message, const unsigned &current_inde
     cout << endl;
 
     vector<float>::iterator action_it = max_element( qvalues.begin(), qvalues.end() );
-    cout << "Max qvalues = " << *action_it << endl;
-    cout << "action = " <<  distance( qvalues.begin(), action_it ) << endl;
+    cout << "Max qvalue = " << *action_it << endl;
+    cout << "Action = " <<  distance( qvalues.begin(), action_it ) << endl;
 }
 
 
