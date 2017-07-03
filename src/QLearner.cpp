@@ -123,6 +123,7 @@ void QLearner::updateQValues( const float& reward, const unsigned &state_index )
     float qvalue_increment = alpha * ( learned_value - last_state.QValue );
     last_state.QValues[ last_state.action ] += qvalue_increment;
     last_state.updateMaxQValue();
+    last_state.scaleQValues();
 
 //    if( last_state.convergenceTreshold > last_state.QValue/learned_value )
     last_state.convergedState[ last_state.action ] = true;
@@ -141,6 +142,7 @@ void QLearner::updateQValues( const float& reward )
     // Use this function when the next state is undetermined
     last_state.QValues[ last_state.action ] += alpha * ( reward + gamma * ( 0 ) - (last_state.QValue) );
     last_state.updateMaxQValue();
+    last_state.scaleQValues();
 }
 
 

@@ -29,6 +29,8 @@ struct State{
 
     bool compareState( const std::vector<float> &observed_state );
     void updateMaxQValue();
+    void scaleQValues();
+    static bool abs_compare(float a, float b);
 };
 
 #endif

@@ -46,3 +46,25 @@ void State::updateMaxQValue()
     vector<float>::iterator action_it = max_element( QValues.begin(), QValues.end() );
     maxQValue = *action_it;
 }
+
+
+bool State::abs_compare(float a, float b)
+{
+    return (abs(a) < abs(b));
+}
+
+
+// Scaling the QValues is not a required step for QLearning
+// Divide QValues by the max absolute value -> QValues E [-1,1]
+void State::scaleQValues()
+{
+    vector<float>::iterator abs_value_it = max_element(QValues.begin(), QValues.end(), abs_compare);
+    float max_value = abs( *abs_value_it );
+
+    if( max_value != 0 ){
+        for( vector<float>::iterator it = QValues.begin(); it != QValues.end(); ++it ){
+            *it = *it / max_value;
+        }
+        updateMaxQValue();
+    }
+}
