@@ -19,42 +19,43 @@ using caffe::TransformationParameter;
 using caffe::DataTransformer;
 
 
-Transition::Transition( const vector<float> &observed_state, const unsigned &action,
-                        const float &reward, const vector<float> &next_state)
+Transition::Transition( const vector<float> &previous_state, const unsigned &action,
+                        const float &reward, const vector<float> &observed_state)
 {
-    this->observedState = observed_state;
+    this->previousState = previous_state;
     this->action = action;
     this->reward = reward;
-    this->nextState = next_state;
+    this->observedState = observed_state;
 }
 
 
-
-CaffeRL::CaffeRL( const string &model_file, const string &trained_file, const string &solver_file):
-    imageBlobName("images"), stateBlobName("states"), outputBlobName("output")
+CaffeRL::CaffeRL( const string &solver_file, const string &weights_file ):
+    imageBlobName("images"), stateBlobName("states"), outputBlobName("output"),
+    targetBlobName("target"), iteration(0)
 {
     Caffe::set_mode(Caffe::GPU);
 
-    caffeNet.reset(new Net<float>( model_file, caffe::TRAIN ));
-    if( access( trained_file.c_str(), F_OK ) != -1  ){
+    caffe::ReadProtoFromTextFileOrDie( solver_file, &solverParam );
+
+    caffeSolver.reset( caffe::SolverRegistry<float>::CreateSolver( solverParam ) );
+    caffeNet = caffeSolver->net();
+
+    tempcaffeSolver.reset( caffe::SolverRegistry<float>::CreateSolver( solverParam ) );
+    tempcaffeNet = tempcaffeSolver->net();
+
+//    caffeNet.reset( new Net<float>(network_file, caffe::TEST) );
+    if( access( weights_file.c_str(), F_OK ) != -1  ){
         cout << "Loading network weights..." << endl;
-        caffeNet->CopyTrainedLayersFrom(trained_file);
+        caffeNet->CopyTrainedLayersFrom( weights_file );
+        tempcaffeNet->CopyTrainedLayersFrom( weights_file );
     }
-
-    printNetInfo();
-
-//    getTransformation( model_file );
-
-    caffe::SolverParameter solver_param;
-    caffe::ReadProtoFromTextFileOrDie( solver_file, &solver_param);
-    caffeSolver.reset(caffe::SolverRegistry<float>::CreateSolver(solver_param));
 }
 
 
-void CaffeRL::getTransformation( const string &model_file )
+void CaffeRL::getTransformation( const string &network_file )
 {
     NetParameter net_parameters;
-    ReadProtoFromTextFileOrDie( model_file, &net_parameters );
+    ReadProtoFromTextFileOrDie( network_file, &net_parameters );
     LayerParameter layer_parameters = net_parameters.layer(0);
     if( layer_parameters.has_transform_param() ){
         TransformationParameter transformation_params = layer_parameters.transform_param();
@@ -115,12 +116,8 @@ void CaffeRL::printBlobContent( const string &blob_name, Blob<float> &blob ) con
 void CaffeRL::printOutput() const
 {
     boost::shared_ptr<Blob<float> > output_blob = caffeNet->blob_by_name( outputBlobName );
-    printBlobInfo("output_blob", *output_blob);
-
-    const float *output_data = output_blob->cpu_data();
-    for(size_t i = 0; i < output_blob->shape(1); ++i){
-        cout << "Output " << i << " = " << output_data[i] << endl;
-    }
+    printBlobInfo( outputBlobName, *output_blob );
+    printBlobContent( outputBlobName, *output_blob );
 }
 
 
@@ -136,7 +133,6 @@ void CaffeRL::loadImageMean( const string &mean_file )
 }
 
 
-// loadHDF5 can be used to open the train_policy and train_states files
 // Load hdf5 files with ONLY ONE GROUP
 void CaffeRL::loadHDF5( const string &file_name, unsigned max_dim )
 {
@@ -158,41 +154,39 @@ void CaffeRL::loadHDF5( const string &file_name, unsigned max_dim )
 
 void CaffeRL::feedImage( const Mat &input_image )
 {
-    // Crop image and remove mean
+    // Remove mean
     boost::shared_ptr<Blob<float> > image_blob = caffeNet->blob_by_name( imageBlobName );
 
 //    dataTransformer->Transform( input_image, image_blob.get() );
 
-    cv::Mat image(image_blob->shape(2), image_blob->shape(3), CV_32FC3, image_blob->mutable_cpu_data() );
+    Mat image(image_blob->shape(2), image_blob->shape(3), CV_32FC3, image_blob->mutable_cpu_data() );
     image = input_image / 256.0f;
 }
 
 
 void CaffeRL::feedState( const float *input_state )
 {
-    const unsigned num_elements = sizeof( input_state ) / sizeof( input_state[0] );
-
+//    const unsigned num_elements = sizeof( input_state ) / sizeof( float );
     boost::shared_ptr<Blob<float> > state_blob = caffeNet->blob_by_name( stateBlobName );
 
     // Load state blob with data;
+    // The gpu memory is synced with the cpu memory -> verify if it is automatic
     float *states = state_blob->mutable_cpu_data();
-    for(size_t i = 0; i < num_elements; ++i){
-        states[i] = input_state[i];
-    }
+    const unsigned input_size = state_blob->count();
+    copy( input_state, input_state + input_size, states );
 }
 
 
-vector<float> CaffeRL::Predict( const float *input_state )
+vector<float> CaffeRL::getOutput() const
 {
-    feedState( input_state );
-
     caffeNet->Forward();
 
     boost::shared_ptr<Blob<float> > output_blob = caffeNet->blob_by_name( outputBlobName );
+    const float *output_data = output_blob->cpu_data();
 
     vector<float> output;
-    const float *output_data = output_blob->cpu_data();
-    for(size_t i = 0; i < output_blob->shape(1); ++i){
+    const unsigned output_size = output_blob->count();
+    for(size_t i = 0; i < output_size; ++i){
         output.push_back( output_data[i] );
     }
 
@@ -200,10 +194,115 @@ vector<float> CaffeRL::Predict( const float *input_state )
 }
 
 
+void CaffeRL::backPropagation( const float &error, const unsigned &action, const unsigned &num_actions )
+{
+  // The error is the same of all actions
+//    const float error_array[num_actions] = { error };
+
+    // The output error for actions not selected are keep equal to zero
+    float error_array[num_actions] = {0};
+    for( size_t i = 0; i < num_actions; ++i ){
+        if( i == action )
+            error_array[i] = error;
+    }
+
+    boost::shared_ptr<Blob<float> > output_blob = tempcaffeNet->blob_by_name( outputBlobName );
+    float *output_diff = output_blob->mutable_cpu_diff();
+    copy( error_array, error_array + num_actions, output_diff );
+    tempcaffeNet->Backward();
+}
+
+
+void CaffeRL::saveModelWeights( const unsigned &iteration) const
+{
+    string model_filename = solverParam.snapshot_prefix() + "_iter_" +
+            to_string(iteration) + ".caffemodel";
+//    LOG(INFO) << "Snapshotting to binary proto file " << model_filename;
+
+    NetParameter net_param;
+    tempcaffeNet->ToProto(&net_param, solverParam.snapshot_diff());
+    WriteProtoToBinaryFile(net_param, model_filename);
+}
+
+
+bool CaffeRL::abs_compare(float a, float b)
+{
+    return (abs(a) < abs(b));
+}
+
+
+void CaffeRL::Train( const vector<Transition> &transitions_container )
+{
+    // Learning rate -> this value is replaced by the Network learning rate
+    // Discount factor
+    const float gamma = 0.8;
+
+    const unsigned batch_size = transitions_container.size();
+
+    cout << "\nTraining network... " << endl;
+    cout << "Batch size = " << batch_size << endl;
+
+    // float accumulated_error = 0;
+    for( size_t i = 0; i < batch_size; ++i ){
+        vector<float> previous_state = transitions_container[i].previousState;
+        vector<float> observed_state = transitions_container[i].observedState;
+        const unsigned action = transitions_container[i].action;
+        const float reward = transitions_container[i].reward;
+
+        // The NN calculates the Q-Values for each state
+        vector<float> previous_state_output = Predict( previous_state );
+        vector<float> observed_state_output = Predict( observed_state );
+
+        // QMax = optimal future value
+        const float QMax = *max_element( observed_state_output.begin(), observed_state_output.end() );
+        // Scale QTarget to [-1,1]
+        const float abs_value = abs( *max_element( previous_state_output.begin(),
+                previous_state_output.end(), abs_compare) );
+        if( abs_value != 0 ){
+            // QTarget = learned value
+            const float QTarget = (reward + gamma * QMax) / abs_value;
+
+            // Acumulated squared error (acc_err)
+            // accumulated_error += alpha * ( QTarget - previous_state_output[action] );
+            const float error = ( QTarget - previous_state_output[action] );
+
+            // Update network weights
+            backPropagation( error, action );
+
+            ++iteration;
+            cout << endl;
+            cout << "Iteration = " << iteration << endl;
+            cout << "Action = " << action << endl;
+            cout << "Reward = " << reward << endl;
+            cout << "QMax = " << QMax << endl;
+            cout << "QTarget = " << QTarget << endl;
+            cout << "Error = " << error << endl;
+        }
+
+        if( (iteration % solverParam.snapshot()) == 0 )
+            saveModelWeights( iteration );
+    }
+
+    // caffeNet is used to run the inferences while tempcaffeNet run the backpropagation
+    NetParameter params;
+    tempcaffeNet->ToProto( &params );
+    caffeNet->CopyTrainedLayersFrom( params );
+}
+
+
+vector<float> CaffeRL::Predict( const vector<float> &input_state )
+{
+    const float *input_state_ptr = &input_state[0];
+    feedState( input_state_ptr );
+
+    return getOutput();
+}
+
+
 vector<float> CaffeRL::Predict( cv::Mat input_image, const float *input_state )
 {
     feedImage( input_image );
-    feedState( input_state );
+//    feedState( input_state );
 
     caffeNet->Forward();
 

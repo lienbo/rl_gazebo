@@ -10,37 +10,19 @@ layer {
       dim: 4
     }
   }
-  include { 
-    phase: TEST
-  }
 }
 
 layer {
-  name: "nfq_gazebo_states"
-  type: "HDF5Data"
-  top: "states"
-  include { 
-    phase: TRAIN
-  }
-  hdf5_data_param {
-    source: "./caffe/dataset/train_states.txt"
-    batch_size: 128
-  }
-}
-
-layer {
-  name: "nfq_gazebo_policy"
-  type: "HDF5Data"
-  top: "policy"
-  include { 
-    phase: TRAIN
-  }
-  hdf5_data_param {
-    source: "./caffe/dataset/train_policy.txt"
-    batch_size: 128
+  name: "nfq_gazebo_target"
+  type: "Input"
+  top: "target"
+  input_param{
+    shape{
+      dim: 1
+      dim: 5
+    }
   }
 }
-
 
 layer {
   name: "ip3"
@@ -151,16 +133,5 @@ layer {
     bias_filler {
       type: "constant"
     }
-  }
-}
-
-layer {
-  name: "loss"
-  type: "EuclideanLoss"
-  bottom: "output"
-  bottom: "policy"
-  top: "loss"
-  include { 
-    phase: TRAIN
   }
 }

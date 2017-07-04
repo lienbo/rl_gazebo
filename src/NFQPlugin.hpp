@@ -17,6 +17,8 @@
 #include "CaffeRL.hpp"
 #include "RoverModel.hpp"
 
+#include <random>
+
 
 namespace gazebo{
     class NFQPlugin : public ModelPlugin{
@@ -27,6 +29,7 @@ namespace gazebo{
         private:
         void Load( physics::ModelPtr model, sdf::ElementPtr sdfPtr );
         void loadParameters( const sdf::ElementPtr &sdfPtr );
+        unsigned eGreedy( unsigned action, const float &probability );
         void onUpdate( const common::UpdateInfo &info );
         void firstAction();
         void trainAlgorithm();
@@ -39,7 +42,7 @@ namespace gazebo{
         event::ConnectionPtr updateConnection;
 
         boost::shared_ptr<RoverModel> roverModel;
-        boost::shared_ptr<CaffeRL> caffeNet;
+        boost::shared_ptr<CaffeRL> caffeRL;
 
         // Counts the time between the action and its result
         common::Time timeMark;
@@ -49,9 +52,12 @@ namespace gazebo{
         std::vector<float> previousState;
         std::vector<Transition> transitionsContainer;
 
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> uniformDist;
         const std::string outputDir;
         unsigned memoryReplaySize, batchSize;
         unsigned maxSteps, numSteps;
+        unsigned maxTrials, numTrials;
         bool train;
     };
     GZ_REGISTER_MODEL_PLUGIN(NFQPlugin)
