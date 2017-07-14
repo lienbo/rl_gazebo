@@ -75,7 +75,8 @@ void RoverModel::checkParameterName( const string &parameter_name )
 {
     // Quit application if parameterName is not defined in sdf file
     if( !sdfFile->HasElement( parameter_name.c_str() ) ){
-        string msg = "RoverModel: " + parameter_name + " parameter not defined in model sdf file.";
+        string msg = "RoverModel: " + parameter_name +
+                " parameter not defined in model sdf file.";
         gzthrow( msg );
     }
 }
@@ -92,8 +93,8 @@ const unsigned RoverModel::bestAction() const
         action = Action::DO_NOTHING;
 
     // Center steering wheel
-    const float angle_limit = 15;
-    if( abs(angle) <= angle_limit ){
+    const float center_angle_limit = 15;
+    if( abs(angle) <= center_angle_limit ){
         if( steeringState > 0 ){
             action = Action::TURN_RIGHT;
         }
@@ -103,10 +104,10 @@ const unsigned RoverModel::bestAction() const
     }
 
     // Turn steering wheel towards destination
-    if(( angle > angle_limit )&&( steeringState < 5 )){
+    if(( angle > center_angle_limit )&&( steeringState < 5 )){
         action = Action::TURN_LEFT;
     }
-    if(( angle < -angle_limit )&&( steeringState > -5 )){
+    if(( angle < -center_angle_limit )&&( steeringState > -5 )){
         action = Action::TURN_RIGHT;
     }
 
@@ -391,42 +392,49 @@ vector<float> RoverModel::getState( const bool &discrete_values ) const
     vector<float> observed_state;
     vector<string> state_names;
 
-	// distance < 0.1 => state = 0
-    // 0.1 < distance < 0.3  =>> state = 1
-    // 0.3 < distance < 0.5  =>> state = 2
     state_names.push_back("distance");
+    float distance = getDestinationDistance();
+
     state_names.push_back("angle");
-    const float distance = getDestinationDistance();
-    const float angle = getAngletoDestination();
-
-    if( discrete_values ){
-        observed_state.push_back( floor((distance + 0.1)/0.1) );
-        observed_state.push_back( round(angle/18) );
-    }else{
-        observed_state.push_back( floor((distance * 10)/10) );
-        observed_state.push_back( round(angle) );
-    }
-
-//    state_names.push_back("distance");
-//    const math::Vector3 distance = getDistanceState();
-//    observed_state.push_back( distance.x );
-//    observed_state.push_back( distance.y );
-//    observed_state.push_back( distance.z );
-
-//    state_names.push_back("orientation");
-//    const math::Vector3 orientation = getEulerAnglesState();
-//    In this dataset the robot wont change roll and pitch
-//    observed_state.push_back( orientation.x );
-//    observed_state.push_back( orientation.y );
-//    observed_state.push_back( orientation.z );
+    float angle = getAngletoDestination();
 
     state_names.push_back("vel");
-    const int velocity = getVelocityState();
-    observed_state.push_back( velocity );
+    float velocity = (float)getVelocityState();
 
     state_names.push_back("steering");
-    const int steering = getSteeringState();
-    observed_state.push_back( steering );
+    float steering = (float)getSteeringState();
+
+    if( discrete_values ){
+	    // distance < 0.1 => state = 0
+        // 0.1 < distance < 0.3  =>> state = 1
+        // 0.3 < distance < 0.5  =>> state = 2
+        observed_state.push_back( floor((distance + 0.1)/0.2) );
+        observed_state.push_back( round(angle/18) );
+        observed_state.push_back( velocity );
+        observed_state.push_back( steering );
+    }else{
+        // Clip distance max value to 5m
+        // And scale the values to [0,1] interval
+        if( distance >= 5 ){
+            distance = 1;
+        }else{
+            distance /= 5;
+        }
+        observed_state.push_back( distance );
+
+        // Scale angle to [0,1] interval
+        // Angle max value is 180
+        angle /= 180;
+        observed_state.push_back( angle );
+
+        // The velocity is already limited to -1, 0, 1
+        observed_state.push_back( velocity );
+
+        // Scale steering to [-1,1]
+        const int steering_angle_limit = 5;
+        steering /= steering_angle_limit;
+        observed_state.push_back( steering );
+    }
 
     printState( observed_state, state_names );
 
@@ -434,12 +442,13 @@ vector<float> RoverModel::getState( const bool &discrete_values ) const
 }
 
 
-void RoverModel::printState( const vector<float> &observed_state, const vector<string> &state_names ) const
+void RoverModel::printState( const vector<float> &observed_state,
+        const vector<string> &state_names ) const
 {
     vector<float>::const_iterator it;
     gzmsg << "State:" << endl;
     for( size_t i = 0; i != observed_state.size(); ++i )
-        gzmsg << '\t' << state_names.at(i) << " = " << observed_state.at(i) << endl;
+        gzmsg << '\t' << state_names[i] << " = " << observed_state[i] << endl;
 }
 
 
