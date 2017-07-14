@@ -37,6 +37,7 @@ namespace gazebo{
         const float getAngletoDestination() const;
         const float getDestinationDistance() const;
         const float getReward() const;
+        const float getDenseReward() const;
 
         const math::Vector3 getDistanceState() const;
         const math::Vector3 getPositionState() const;

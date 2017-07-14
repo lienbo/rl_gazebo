@@ -228,7 +228,7 @@ const float RoverModel::getAngletoDestination() const
     math::Vector3 abs_position = global_pose.pos;
     math::Quaternion orientation = global_pose.rot;
 
-    math::Vector3 relative_position = orientation.RotateVectorReverse( abs_position );
+    math::Vector3 relative_position = orientation.RotateVectorReverse(abs_position);
     math::Vector3 destination_vector = setPoint - relative_position;
 
     destination_vector = destination_vector.Normalize();
@@ -258,28 +258,34 @@ const float RoverModel::getAngletoDestination() const
 
 const float RoverModel::getReward() const
 {
-//    const float distance = getDestinationDistance();
-//    reward = abs(setPoint - abs_position.x) > 0.01 ? -1 : 0;
-//    reward = - distance / ( distance + 4);
-
-    const float current_distance = floor( getDestinationDistance() * 10 ) / 10;
-    float reward = - current_distance;
-
-//    // The distance must have 2 decimal places due to precision fluctuations.
-//    const float current_distance = floor( getDestinationDistance() * 100 ) / 100;
-
-//    // reward = 0 if model is approaching destination, -1 if going away from it
-//    const float floor_last_distance = floor(lastDistance * 100) / 100;
-//    float reward = (  current_distance < floor_last_distance ) ? 0 : -1;
+    // The distance must have 2 decimal places due to precision fluctuations.
+    const float current_distance = floor( getDestinationDistance() * 100 )/100;
+    const float last_distance = floor(lastDistance * 100) / 100;
+    // reward = 0 if model is approaching destination, -1 otherwise
+    float reward = ( current_distance < last_distance ) ? 0 : -1;
 
     // Terminal state reward
     if( current_distance < terminalDistance ){
         reward = 10;
     }
 
-//    gzmsg << "lastDistance = " <<  round_last_distance  << endl;
-    gzmsg << "distance = " << current_distance << endl;
-    gzmsg << "reward = " << reward << endl;
+    return reward;
+}
+
+
+const float RoverModel::getDenseReward() const
+{
+    const float distance = getDestinationDistance();
+    // Worse rewards for larger distances
+    float reward = - distance / ( distance + 4);
+    // Set 2 decimal precision
+    reward = floor( reward * 100 ) / 100;
+
+    // Terminal state reward
+    const float current_distance = floor( getDestinationDistance() * 100 )/100;
+    if( current_distance < terminalDistance ){
+        reward = 10;
+    }
 
     return reward;
 }
